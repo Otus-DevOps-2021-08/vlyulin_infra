@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4" />
 
-# Branch vlyulin_infra
-vlyulin Infra repository
+# vlyulin Infra repository
 
 # Content:
 * [Student](#Student)
