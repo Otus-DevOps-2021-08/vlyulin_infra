@@ -48,3 +48,7 @@ Host someinternalhost
 ```
 ssh -i ~/.ssh/vlyulin_key someinternalhost
 ```
+
+## Описание конфигурации
+bastion_IP = 130.193.37.127
+someinternalhost_IP = 10.128.0.30
