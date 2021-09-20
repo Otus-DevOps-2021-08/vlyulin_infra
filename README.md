@@ -61,3 +61,6 @@ https://130.193.37.127.sslip.io
 ## Описание конфигурации
 bastion_IP = 130.193.37.127
 someinternalhost_IP = 10.128.0.30
+=======
+# vlyulin_infra
+vlyulin Infra repository
