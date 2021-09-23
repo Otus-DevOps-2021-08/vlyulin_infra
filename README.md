@@ -81,11 +81,8 @@ testapp_port=9292
 
 Создание ключей:
 ```
-ssh-keygen -t rsa -b 2048 -f appuser -C appuser -P ""
+ssh-keygen -t rsa -b 2048 -f ~/.ssh/appuser -C appuser -P ""
 ```
-Требование к ключам:
-https://cloud.yandex.ru/docs/iam/operations/authorized-key/create
-https://cloud.yandex.ru/docs/managed-kubernetes/operations/node-connect-ssh
 
 Команда создания ВМ (файл yc-create-instance.sh):
 ```
