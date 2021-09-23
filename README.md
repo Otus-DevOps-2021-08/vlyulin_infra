@@ -73,11 +73,19 @@ someinternalhost_IP = 10.128.0.30
         - MongoDB (install_mongo.sh),
         - Reddit (deploy.sh)
 3) Скриптам install_ruby.sh, install_mongo.sh, deploy.sh установлен флаг исполнения +x
-4) Проверена работа приложения http://178.154.203.75:9292
+4) Проверена работа приложения http://62.84.116.223:9292
 5) Предпринята попытка выполнения дополнительного задания
 
-testapp_IP=178.154.203.75
+testapp_IP=62.84.116.223
 testapp_port=9292
+
+Создание ключей:
+```
+ssh-keygen -t rsa -b 2048 -f appuser -C appuser -P ""
+```
+Требование к ключам:
+https://cloud.yandex.ru/docs/iam/operations/authorized-key/create
+https://cloud.yandex.ru/docs/managed-kubernetes/operations/node-connect-ssh
 
 Команда создания ВМ (файл yc-create-instance.sh):
 ```
@@ -93,7 +101,7 @@ yc compute instance create \
 ```
 
 Соединение с rabbit-app:
-ssh -i ~/.ssh/appuser yc-user@178.154.203.75
+ssh -i ~/.ssh/appuser yc-user@62.84.116.223
 
 Дополнительное задание:
 `
@@ -111,9 +119,9 @@ users:
   - name: appuser
     groups: sudo
     shell: /bin/bash
-    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    sudo: ALL=(ALL:ALL) NOPASSWD:ALL
     ssh_authorized_keys:
-      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDJ6MJ3oZ3F3bTpk6unzfpk8bYybal7Otj4arRZPnRcCxeJXC7fZIh9KEnzUKi2Zb4M+MeDMvrb05eYsNGKfPJ0FFyqkrVKZ7zHaK9QG7urg/REJRdUX8XNIpfwLprxZ1i9aKnjb6my3SEeoHYu0oHQ0N+7cX/zdBqMK0TwDPLQVcS1XD4hyMZwjG98Agy+MKg2Ik1bRpOp25n6u8va34+JklKFm2vEmKMU+2vtrZrAgFJSrf/wUbw42tD6vcKsRocO6wbZPjAB1m5ck8Wqy9e2o7uj7YDW+Rg08xYJMRSffJNOrzCSiBhxd+0ZsO0/6ZWLxSlhUNwnEnCj7Fy/gfYfQ7dUu6OHQr3OLC/QAYq3k2BRu5p/kkKy7rVrlKsIEtoYqsXGFubMNCVeGr1X+lf91akVctV8aExkwqgJZJF95pkms1mSeGv7ajioRxTnWhgq6NMyDgn3TA0DKMwSQxsJmcr/mX9ohPq21EDqr5/lbCc4wfL9asWHEisYlcWdV4k= appuser
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCjk1hL2RJ/cLvzmBZ4dsRGKmceEh+x5VxMPY09/wG/yiv7j2gm+flQQ4bRZfQwmEPsVW8OflQPBfyVsttXoilG0Q5xO2hT1Kgjr/RMGW6LghXOZFSTFLEZ+OAXgf89W3RyYIMgsJti7qNTHJSqsq1CrxNm8fCVdU1h//+YOoYQUgEZ25uOHPm/agByptI4Icqv/0u5pYpu2IJHo4ko/D3uVwsc9WRPyFt73uPW/EGgOCjVWTvNxuGxb6S7f1KMHuKrf4vrjeuO7YfklCldnjhnULLj0SV1LhdmRzkNNAU8WZdw/HCyRKpUmY5aM6UlkayI0x+plFMQE4ODj7yQaJ0r appuser
 
 bootcmd:
   # install ruby
