@@ -182,3 +182,8 @@ yc compute instance create \
   --metadata-from-file user-data=cloud-config.yml
 
 ```
+
+Передать файлы в git как выполняемые (+x):
+```
+git update-index --chmod=+x
+```
