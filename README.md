@@ -63,7 +63,7 @@ https://130.193.37.127.sslip.io
 bastion_IP = 130.193.37.12
 someinternalhost_IP = 10.128.0.30
 
-## Module hw04-cloud-bastion<a name="Module-hw04-cloud-testapp"></a>
+## Module hw04-cloud-testapp<a name="Module-hw04-cloud-testapp"></a>
 Деплой тестового приложения reddit
 
 1) Установлен YC CLI
