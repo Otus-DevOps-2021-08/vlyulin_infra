@@ -139,6 +139,36 @@ bootcmd:
   - puma -d
 ```
 
+Другой вариант конфигаруционного файла cloud-config_sudoers.d.yml:
+```
+#cloud-config
+
+bootcmd:
+  - echo "======Put public key to authorized_keys======"
+  - PUBKEY="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCjk1hL2RJ/cLvzmBZ4dsRGKmceEh+x5VxMPY09/wG/yiv7j2gm+flQQ4bRZfQwmEPsVW8OflQPBfyVsttXoilG0Q5xO2hT1Kgjr/RMGW6LghXOZFSTFLEZ+OAXgf89W3RyYIMgsJti7qNTHJSqsq1CrxNm8fCVdU1h//+YOoYQUgEZ25uOHPm/agByptI4Icqv/0u5pYpu2IJHo4ko/D3uVwsc9WRPyFt73uPW/EGgOCjVWTvNxuGxb6S7f1KMHuKrf4vrjeuO7YfklCldnjhnULLj0SV1LhdmRzkNNAU8WZdw/HCyRKpUmY5aM6UlkayI0x+plFMQE4ODj7yQaJ0r appuser"
+  - sudo echo $PUBKEY > ~/.ssh/authorized_keys
+  - echo "======Create user======"
+  - USERNAME="appuser"
+  - adduser --disabled-password --gecos "" $USERNAME
+  - echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/$USERNAM
+  - echo "install ruby"
+  - sudo apt update
+  - sudo apt install -y ruby-full ruby-bundler build-essential
+  - echo "install mongo"
+  - wget -qO - https://www.mongodb.org/static/pgp/server-4.2.asc | sudo apt-key add -
+  - echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/4.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.2.list
+  - sudo apt-get update
+  - sudo apt-get install -y mongodb-org
+  - sudo systemctl start mongod
+  - sudo systemctl enable mongod
+  - echo "install reddit"
+  - cd ~
+  - apt install git
+  - git clone -b monolith https://github.com/express42/reddit.git
+  - cd reddit && bundle install
+  - puma -d
+```
+
 Команда создания ВМ (файл yc-create-instance-with-cloud-config.sh):
 ```
 #!/bin/bash
