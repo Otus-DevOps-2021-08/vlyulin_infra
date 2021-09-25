@@ -2,7 +2,7 @@
     "builders": [
         {
             "type": "yandex",
-            "service_account_key_file": "key.json",
+            "service_account_key_file": "keys.json.example",
             "folder_id": "b1g97nk43unle0o4u325",
             "zone":      "ru-central1-a",
             "source_image_family": "ubuntu-1604-lts",
