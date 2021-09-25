@@ -285,7 +285,7 @@ a975 rpc error: code = ResourceExhausted desc = Quota limit vpc.networks.count e
 
 7. В директорию scripts были скопированы скрипты install_ruby.sh и install_mongodb.sh из предыдущего ДЗ.
 
-8. Выполнена проперка шаблона командой
+8. Выполнена проверка шаблона командой
 ```
 packer validate ./ubuntu16.json
 ```
@@ -355,7 +355,7 @@ puma -d
 
 14. Созданы файлы с переменными variables.json и variables.json.example
 
-15. На базе ubuntu16.json создаем immutable.json
+15. На базе ubuntu16.json создан immutable.json
 ```
 {
     "builders": [
