@@ -431,7 +431,7 @@ yc vpc address update --reserved=true ...
 ```
 21. Проверена работа приложения в ВМ созданного из образа reddit-full: http://62.84.116.36:9292/
 
-## Module hw06-terraform-1 "Практика IaC сиспользованием Terraformиспользованием Terrafor" <a name="Module-hw06-terraform-1"></a>
+## Module hw06-terraform-1 "Декларативное описание в виде кода инфраструктуры YC, требуемой для запуска тестового приложения, при помощи Terraform." <a name="Module-hw06-terraform-1"></a>
 
 1. В инфраструктурном репозитории для выполнения данного создана ветка terraform-1
 2. Установлен terraform v.0.12.8
