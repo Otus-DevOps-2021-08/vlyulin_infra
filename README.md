@@ -8,6 +8,7 @@
 * [Module hw03-bastion](#Module-hw03-bastion)
 * [Module hw04-cloud-testapp](#Module-hw04-cloud-testapp)
 * [Module hw05-packer](#Module-hw05-packer)
+* [Module hw06-terraform-1](#Module-hw06-terraform-1)
 
 # Student
 `
@@ -429,3 +430,203 @@ yc vpc address list
 yc vpc address update --reserved=true ...
 ```
 21. Проверена работа приложения в ВМ созданного из образа reddit-full: http://62.84.116.36:9292/
+
+## Module hw06-terraform-1 "Практика IaC сиспользованием Terraformиспользованием Terrafor" <a name="Module-hw06-terraform-1"></a>
+
+1. В инфраструктурном репозитории для выполнения данного создана ветка terraform-1
+2. Установлен terraform v.0.12.8
+3. Создана директория terraform и файл main.tf
+4. В .gitignore добавлены шаблоны файлов terrfarom
+5. В Yandex Cloud создан сервисный account terraform, которому дана роль editor
+6. Создан авторизованный ключ для сервисного аккаунта terraform
+```
+yc iam key create --service-account-name terraform --output terraform-key.json
+```
+7. Создан профиль для выполнения команд от имени сервисного аккаунта terraform
+```
+yc config profile create terraform-profile
+```
+8. В конфигурации профиля указан авторизованный ключ сервисного аккаунта:
+```
+yc config set service-account-key key.json
+```
+9. В файл main.tf добавлено описания провайдера и ресурса.
+10. Создана ВМ с помощью команды:
+```
+terraform apply -auto-approve
+```
+11. В ответ на ошибку 'the specified number of cores is not available on platform "standard-v1"' сделано следующее:
+11.1 Добавлен атрибут platform_id = "standard-v2"
+11.2 Установлен атрибут resources.0.cores = 2
+11.3 Установлен атрибут resources.0.core_fraction = 5
+12. Сгенерированы ключи для пользователя ubuntu
+13. Добавлена секция metadata для описания ssh-ключа для пользователя ubuntu в main.tf
+14. Выполнено пересоздание ВМ с помощью команд terraform destroy и terraform apply
+15. Выполнено успешное присоединение к созданноё ВМ с пользователем ubuntu с помощью команд
+```
+terraform show | grep nat_ip_address
+ssh -i ~/.ssh/ubuntu/ubuntu ubuntu@62.84.117.150
+```
+16. Создан файл output.tf
+17. Получен ip с помощью команд
+```
+terraform refresh
+terraform output
+```
+18. Создан файл files/puma.service
+19. В файл main.tf добавлен provisioner "remote-exec"
+20. Создан файл files/deploy.sh
+21. В файл main.tf добавлена секция connection для возможности соединения provisioners к ВМ
+22. Отмечаем ВМ как ресурс, который требуется пересоздать при следующем применении изменений
+```
+terraform taint yandex_compute_instance.app
+```
+23. Применены изменения, т.е. пересоздана ВМ и выполнены provisioners
+24. Проверена работоспособность приложения reddit по выведенному external_ip_address_app = 130.193.39.109
+25. Создан файл variables.tf для входных переменных для параметризации входных переменных
+26. В файле main.tf определение ресурсов сделано через переменные
+27. Определены переменные в файле terraform.tfvars
+28. Пересоздана ВМ. external_ip_address_app = 130.193.48.249. Проверена работоспособность приложения reddit.
+
+### Самостоятельные задания
+29. Определена переменная для приватного ключа private_key_path
+30. Определены входные переменные:
+```
+variable "zones" - тип map, список возможных зон
+variable "zone"  - выбранная зона из списка
+```
+31. Выполнено форматирование файлов main.tf, terraform.tfvars, variables.tf с помощью команды terraform fmt
+32. Создан файл terraform.tfvars.example
+
+### Задание **
+33. Cоздан файл lb_target_group.tf с описанием target group, которая будет подключена к load balancer.
+```
+resource "yandex_lb_target_group" "vl-lb-target-group" {
+  name      = "vl-target-group"
+  folder_id = var.folder_id
+  region_id = var.region_id
+
+  target {
+    address = yandex_compute_instance.app.network_interface.0.ip_address
+      subnet_id = var.subnet_id
+  }
+}
+
+```
+
+34. Создан файл lb.tf с описанием load balancer
+```
+resource "yandex_lb_network_load_balancer" "vllb" {
+  name = "vl-network-load-balancer"
+  type = "external"
+
+  listener {
+    name = "vl-listener"
+    port = 80
+    target_port = 9292
+
+    external_address_spec {
+      ip_version = "ipv4"
+    }
+  }
+
+  attached_target_group {
+    target_group_id = yandex_lb_target_group.vl-lb-target-group.id
+
+    healthcheck {
+      name = "tcp"
+      tcp_options {
+        port = 9292
+      }
+    }
+  }
+}
+```
+
+35. Добавлена переменная lb_network_ip_address в output.tf
+```
+output "lb_network_ip_address" {
+  value = yandex_lb_network_load_balancer.vllb.listener.*.external_address_spec[0].*.address
+}
+```
+
+36. Созданы target group и load balancer с помощью команд
+```
+terraform plan
+terraform apply -auto-approve
+```
+
+37. Создано второе приложение reddit-app2
+```
+resource "yandex_compute_instance" "app2" {
+  name = "reddit-app2"
+  ...
+}
+```
+
+Второе приложение добавлено в target group "vl-lb-target-group"
+```
+  target {
+    address = yandex_compute_instance.app2.network_interface.0.ip_address
+      subnet_id = var.subnet_id
+  }
+```
+
+Внесены изменения в output.tf
+```
+output "external_ip_addresses_app" {
+  value = yandex_compute_instance.app[*].network_interface.0.nat_ip_address
+}
+```
+
+38. Проверена работоспособность запросов к приложению через load balancer при остановке одного из приложений (команда 'systemctl stop puma')
+
+39. Ответ на вопрос "Какие проблемы вы видите в такой конфигурации приложения?"
+При выполненном вышеописанном подходе при необходимости добавления дополнительной ноды,
+требуется копирование описания настроек resource "yandex_compute_instance"
+и правка описания target group. Что не есть хорошо, так как требуется копирование кода.
+
+40. Реализован подход с заданием количества инстансов через параметр ресурса count.
+
+В файл variables.tf добавлено описание переменной количество требуемых инстансов
+```
+
+Удалены настройки второго приложения app2.
+Внесены изменения в настройки приложения app учитывающие количество создаваемых инстансов.
+```
+resource "yandex_compute_instance" "app" {
+  iter        = var.required_number_instances
+  name        = "reddit-app-${iter.index}"
+  platform_id = "standard-v2"
+```
+
+Изменено описание target group, чтобы приложения включались в группу динамически
+```
+dynamic "target" {
+    for_each = yandex_compute_instance.app.*.network_interface.0.ip_address
+    content {
+      subnet_id = var.subnet_id
+      address   = target.value
+    }
+  }
+```
+
+40. Пересоздано и проверено приложение с помощью команд:
+```
+terraform plan -var="required_number_instances=2"
+terraform apply -auto-approve -var="required_number_instances=2"
+```
+вывод:
+```
+Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+external_ip_address_app = [
+  "62.84.112.13",
+  "62.84.114.78",
+]
+lb_network_ip_address = [
+  "62.84.118.205",
+]
+```
