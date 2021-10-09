@@ -9,6 +9,7 @@
 * [Module hw04-cloud-testapp](#Module-hw04-cloud-testapp)
 * [Module hw05-packer](#Module-hw05-packer)
 * [Module hw06-terraform-1](#Module-hw06-terraform-1)
+* [Module hw07-terraform-2](#Module-hw07-terraform-2)
 
 # Student
 `
@@ -630,3 +631,130 @@ lb_network_ip_address = [
   "62.84.118.205",
 ]
 ```
+
+## Module hw07-terraform-2 "Принципы организации инфраструктурного кода и работа над инфраструктурой в команде на примере Terraform" <a name="Module-hw07-terraform-2"></a>
+1. В инфраструктурном репозитории для выполнения данного создана ветка terraform-2
+2. В конфигурационный файл main.tf добавлены ресурсы yandex_vpc_network и yandex_vpc_subnet
+3. При попытке выполнения команды terraform apply получена ошибка "Quota limit vpc.networks.count exceeded".
+Решение удаление сети по умолчанию.
+Cloud monitor > Virtual Private Cloud > Cloud Networks > (B) Delete
+Или через CLI:
+Получить идентификатор сети:
+```
+yc vpc net list --folder-id "b1g97nk43unle0o4u325"
+```
+Получить идентификаторы подсетей:
+```
+yc vpc net list-subnets --id enpen3usuf0mpovt2h1u
+```
+Удаление подсетей:
+```
+yc vpc subnet delete --id <subnet id>
+```
+Удаление сети:
+```
+yc vpc net delete --id <net id>
+```
+4. ... паралельное создание
+5. В main.tf добавлено создание network_interface. Выполнен перезапуск, где ВМ стала создаваться после создания подсети.
+6. В директории packer созданы два новых шаблона db.json и app.json в которые скопировано и подкорректировано содержимое файла ubuntu16.json.
+7. В файлы apps.json и db.json внесены изменения. Создан соответствующий файл с переменными variables_for_terraform.json
+8. Созданы образы приложения и базы:
+```
+packer validate -var-file=./variables_for_terraform.json db.json
+packer build -var-file=./variables_for_terraform.json db.json
+packer validate -var-file=./variables_for_terraform.json app.json
+packer build -var-file=./variables_for_terraform.json app.json
+```
+9. В директории teraforms создан файл app.tf
+10. В файле variables.tf объявлены новые переменные app_disk_image и db_disk_image для указания id образов.
+11. В файле terraform.tfvars переменным app_disk_image и db_disk_image даны значения.
+12. В файле variables.tf объявлена новая переменная required_db_number_instances определяющая количество инстансов с базой данных.
+13. Создан файл vpc.tf куда вынесено описание конфигурации сети. Разнесены другие ресурсы в соответствии с заданием.
+14. Выполнена установка измененной конфигурации с помощью команды terraform apply. Выполнена проверка и удаление с помощью команды terraform destroy.
+15. Создана директория modules
+16. В директории terraform/modules
+17. Создана директория db в которой созданы файлы: main.tf, outputs.tf и variables.tf. В файлы main.tf, outputs.tf и variables.tf перенесена соответствующая информация.
+18. Создана директория app в которой созданы файлы: main.tf, outputs.tf и variables.tf. В файлы main.tf, outputs.tf и variables.tf перенесена соответствующая информация.
+19. Создана директория vpc куда перенесены настройки сети.
+20. Для использования модулей загружаем их командой terraform get.
+21. В файле terraform/outputs.tf исправлено определение переменных для вывода с ссылкой на модули.
+22. Переустановлено приложение и проверена его работоспособность.
+23. В директории terrafrom созданы две директории: stage и prod.
+24. Скопированы файлы main.tf, variables.tf, outputs.tf, terraform.tfvars, key.json из директории terraform в директории stage и prod.
+25. В каждой директории stage и prod выполнено terraform init и terraform apply.
+
+### Самостоятельные задания:
+26. Удалены из папки terraform файлы main.tf, outputs.tf, terraform.tfvars, variables.tf
+27. Параметризированы конфигурации модулей. Добавлено значение количества создаваемых инстансов app
+28. Отформатированы файлы *.fmt с помощью команды terraform fmt
+
+### Задание со * "Настройка хранения state файла в удаленном хранилище Yandex Object Storage"
+29. Создана директория storage-backet
+30. В файле main.tf указан yandex провайдер.
+31. В файле terraform-account.tf указаны команды определения account terraform.
+32. А так как account terraform уже был создан, то выполнен импорт ресурса командой
+```
+terraform import yandex_iam_service_account.terraform <id terraform account>
+```
+33. Создан файл storage-backet.tf с определением хранилища.
+34. Создано хранилище командой terraform apply.
+35. В папках prod и stage созданы файлы:
+- credentials.aws - с ключами для доступа к bucket
+- backend.tf - для определения удаленного хранилища состояния terraform со следующим содержанием:
+```
+terraform {
+  backend "s3" {
+    endpoint   = "storage.yandexcloud.net"
+    bucket     = "vltf-state-bucket"
+    region     = "ru-central1"
+    key        = "prod/terraform.tfstate"
+    shared_credentials_file = "./credentials.aws"
+
+    skip_region_validation      = true
+    skip_credentials_validation = true
+   }
+}
+```
+>**_Note_**: При этом при определении backend нельзя указывать пременные.
+36. После создания файлов для опеределения backend выполнена команда terraform init
+37. После выполнения команд terraform init и terraform plan в bucket новых объектов не появилось.
+В bucket файл terraform.tfstate появился только после выполнения команды terraform apply -auto-approve.
+38. Удаляем terraform.tfstate в локальной директории у выполняем команду terraform plan.
+39. Файл credentials.aws добавлен в .gitignore
+
+### Задание с ** "Добавление provisioner в модули"
+40. Для deploy приложения в каждом из модулей создан каталог files куда скопированы файлы для конфигураций и деплоев приложений.
+41. Создан шаблон puma.service.tmpl конфигурации приложения app, где добавлена передача адреса для подключения к базе данных:
+```
+[Unit]
+Description=Puma HTTP Server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Environment=DATABASE_URL=${database_ip}
+WorkingDirectory=/home/ubuntu/reddit
+ExecStart=/bin/bash -lc 'puma'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+42. В файл modules/app/main.tf добавлены provisioners
+```
+  provisioner "file" {
+    content     = templatefile("${path.module}/files/puma.service.tmpl", { database_ip = var.database_ip })
+    destination = "/tmp/puma.service"
+  }
+
+  provisioner "remote-exec" {
+    script = "${path.module}/files/deploy.sh"
+  }
+```
+43. В файле modules/app/main.tf сделана явная зависимость между модулями app и db.
+```
+ depends_on = [var.database_ip]
+```
+44. Добавлен модуль lb с описанием конфигурации load balancer.
