@@ -1,0 +1,8 @@
+{
+  "key": "keys.json",
+  "folder_id": "b1g97nk43unle0o4u325",
+  "zone": "ru-central1-a",
+  "subnet_id": "e9b6mk44an1e28kvm7gi",
+  "source_image_family": "ubuntu-1604-lts",
+  "ssh_username": "ubuntu"
+}
