@@ -713,14 +713,14 @@ packer build -var-file=./variables_for_terraform.json app.json
 27. Отформатированы файлы *.fmt с помощью команды terraform fmt
 
 ### Задание со * "Настройка хранения state файла в удаленном хранилище Yandex Object Storage"
-28. Создана директория storage-backet
-29. В файле main.tf указан yandex провайдер.
-30. В файле terraform-account.tf указаны команды определения account terraform.
+28. Создан storage-backet. Для этого:
+29. В файле terraform/main.tf указан yandex провайдер.
+30. В файле terraform/terraform-account.tf указаны команды определения account terraform.
 31. А так как account terraform уже был создан, то выполнен импорт ресурса командой
 ```
 terraform import yandex_iam_service_account.terraform <id terraform account>
 ```
-32. Создан файл storage-backet.tf с определением хранилища.
+32. Создан файл terraform/storage-backet.tf с определением хранилища.
 33. Создано хранилище командой terraform apply.
 34. В папках prod и stage созданы файлы:
 - credentials.aws - с ключами для доступа к bucket
