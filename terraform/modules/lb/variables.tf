@@ -17,7 +17,7 @@ variable lb_port {
 variable subnet_id {
   description = "Subnets for modules"
 }
-variable external_ip_address_app {
+variable internal_ip_address_app {
   type        = list(string)
   description = "List of ip addresses"
 }
