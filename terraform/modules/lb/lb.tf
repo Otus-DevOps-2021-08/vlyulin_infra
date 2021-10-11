@@ -5,7 +5,7 @@ resource "yandex_lb_network_load_balancer" "vllb" {
   listener {
     name        = "vl-listener"
     port        = var.lb_port
-    target_port = 9292
+    target_port = var.target_port
 
     external_address_spec {
       ip_version = "ipv4"
@@ -18,7 +18,7 @@ resource "yandex_lb_network_load_balancer" "vllb" {
     healthcheck {
       name = "tcp"
       tcp_options {
-        port = 9292
+        port = var.target_port
       }
     }
   }

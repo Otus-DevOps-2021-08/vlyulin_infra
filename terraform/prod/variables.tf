@@ -51,3 +51,13 @@ variable db_disk_image {
   description = "Disk image for reddit app"
   default     = "reddit-db-base"
 }
+variable lb_port {
+  type = number
+  description = "http port"
+  default     = 80
+}
+variable provisioners_required {
+  description = "Enabling and disabling provosioners"
+  type        = bool
+  default     = true
+}

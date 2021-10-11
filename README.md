@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4" />
 
-# vlyulin Infra repository
+#vlyulin Infra repository
 
-# Content:
+#Content:
 * [Student](#Student)
 * [Module hw03-bastion](#Module-hw03-bastion)
 * [Module hw04-cloud-testapp](#Module-hw04-cloud-testapp)
@@ -18,7 +18,12 @@ Course: DevOps
 Group: Otus-DevOps-2021-08
 `
 
-## Module hw03-bastion<a name="Module-hw03-bastion"></a>
+## Module hw03-bastion "Запуск VM в Yandex Cloud,  управление правилами фаервола, настройка SSH подключения, настройка SSH подключения через Bastion Host, настройка VPN сервера и VPN-подключения" <a name="Module-hw03-bastion"></a>
+> Цель:
+> В данном дз студент создаст виртуальные машины в YC. Настроит bastion host и ssh.
+> В данном задании тренируются навыки: создания виртуальных машин, настройки bastion host, ssh
+> Все действия описаны в методическом указании.
+
 ### Самостоятельное задание
 Исследовать способ подключения к someinternalhost в одну команду из вашего рабочего устройства,
 проверить работоспособность найденного решения и внести его в README.md в вашем репозитории.
@@ -68,7 +73,13 @@ https://130.193.37.127.sslip.io
 bastion_IP = 130.193.37.12
 someinternalhost_IP = 10.128.0.30
 
-## Module hw04-cloud-testapp<a name="Module-hw04-cloud-testapp"></a>
+## Module hw04-cloud-testapp "Практика управления ресурсами yandex cloud через YC" <a name="Module-hw04-cloud-testapp"></a>
+> Цель:
+> В данном дз произведет ручной деплой тестового приложения. Напишет bash скрипт для автоматизации задач настройки VM и деплоя приложения.
+> В данном задании тренируются навыки: деплоя приложения на сервер, написания bash скриптов.
+> Ручной деплой тестового приложения. Написание bash скриптов для автоматизации задач настройки VM и деплоя приложения.
+> Все действия описаны в методическом указании.
+
 Деплой тестового приложения reddit
 
 1) Установлен YC CLI
@@ -194,6 +205,11 @@ git update-index --chmod=+x
 ```
 
 ## Module hw05-packer: Подготовка образов с помощью packer <a name="Module-hw05-packer"></a>
+> Цель:
+> В данном дз студент произведет сборку готового образа с уже установленным приложением при помощи Packer.
+> Задеплоит приложение в Yandex compute cloud при помощи ранее подготовленного образа.
+> В данном задании тренируются навыки: работы с Packer, работы с YC.
+> Все действия описаны в методическом указании.
 
 Выполненные работы
 
@@ -433,6 +449,10 @@ yc vpc address update --reserved=true ...
 21. Проверена работа приложения в ВМ созданного из образа reddit-full: http://62.84.116.36:9292/
 
 ## Module hw06-terraform-1 "Декларативное описание в виде кода инфраструктуры YC, требуемой для запуска тестового приложения, при помощи Terraform." <a name="Module-hw06-terraform-1"></a>
+> Цель:
+> В данном дз студент опишет всю инфраструктуру в Yandex Cloud при помощи Terraform.
+> В данном задании тренируются навыки: создания и описания инфраструктуры при помощи Terraform. Принципы и подходы IaC.
+> Все действия описаны в методическом указании.
 
 1. В инфраструктурном репозитории для выполнения данного создана ветка terraform-1
 2. Установлен terraform v.0.12.8
@@ -632,7 +652,13 @@ lb_network_ip_address = [
 ]
 ```
 
-## Module hw07-terraform-2 "Принципы организации инфраструктурного кода и работа над инфраструктурой в команде на примере Terraform" <a name="Module-hw07-terraform-2"></a>
+## Module hw07-terraform-2 "Создание Terraform модулей для управления компонентами инфраструктуры." <a name="Module-hw07-terraform-2"></a>
+> Цель:
+> В данном дз студент продолжит работать с Terraform.
+> Опишет и произведет настройку нескольких окружений при помощи Terraform. Настроит remote backend.
+> В данном задании тренируются навыки: работы с Terraform, использования внешних хранилищ состояния инфраструктуры.
+> Описание и настройка инфраструктуры нескольких окружений. Работа с Terraform remote backend.
+
 1. В инфраструктурном репозитории для выполнения данного создана ветка terraform-2
 2. В конфигурационный файл main.tf добавлены ресурсы yandex_vpc_network и yandex_vpc_subnet
 3. При попытке выполнения команды terraform apply получена ошибка "Quota limit vpc.networks.count exceeded".
@@ -758,3 +784,67 @@ WantedBy=multi-user.target
  depends_on = [var.database_ip]
 ```
 44. Добавлен модуль lb с описанием конфигурации load balancer.
+#### Реализация отключения provisioners в зависимости от значения переменной provisioners_required
+45. В каждом модуле prod и stage создана переменная provisioners_required в файлах variables.tf:
+```
+variable provisioners_required {
+  description = "Enabling and disabling provosioners"
+  type = bool
+  default = true
+}
+```
+Такое же определение добавлено в файл определения переменных в модуле .\modules\app\variables.tf
+
+46. В файлах prod\terraform.tfvars и stage\terraform.tfvars определено значение переменной required_provisioners
+```
+required_provisioners = true
+```
+47. Реализована передача значения переменной в модуль app.
+Для этого внесены изменения в файлы prod\main.tf и stage\main.tf
+```
+module "app" {
+  source                    = "../modules/app"
+  public_key_path           = var.public_key_path
+  private_key_path          = var.private_key_path
+  app_disk_image            = var.app_disk_image
+  required_number_instances = var.required_number_instances
+  subnet_id                 = "${module.vpc.subnet_id}"
+  database_ip               = "${module.db.external_ip_address_db}"
+  required_provisioners     = var.required_provisioners
+}
+```
+47. Для реализации исполнения/не исполнения provisioners в зависимости от переменной используется null_resource для которого
+количество (count) экземпляров (1 или 0) определяется в зависимости от значения переменной provisioners_required.
+Данный ресурс должен быть исполнен для каждого создаваемого экземпляра app.
+```
+resource "null_resource" "inst_reddit" {
+    count = var.provisioners_required ? 1 : 0
+    triggers = {
+      cluster_instance_ids = join(",", yandex_compute_instance.app.*.id)
+    }
+
+    connection {
+      type  = "ssh"
+      # host  = self.network_interface.0.nat_ip_address
+      host  = "${yandex_compute_instance.app.*.id}"
+      user  = "ubuntu"
+      agent = false
+      # путь до приватного ключа
+      private_key = file(var.private_key_path)
+    }
+
+    provisioner "file" {
+      content     = templatefile("${path.module}/files/puma.service.tmpl", { database_ip = var.database_ip })
+      destination = "/tmp/puma.service"
+    }
+
+    provisioner "remote-exec" {
+      script = "${path.module}/files/deploy.sh"
+    }
+}
+```
+48. После добавления null_resource потребовалось повторная инициализация terraform init
+49. Установлена и проверена измененная версия приложения с помощью команлы
+```
+terraform apply -auto-approve
+```

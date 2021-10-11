@@ -54,3 +54,13 @@ variable db_disk_image {
 variable bucket_name {
   description = "bucket name"
 }
+variable lb_port {
+  type = number
+  description = "http port"
+  default     = 80
+}
+variable provisioners_required {
+  description = "Enabling and disabling provosioners"
+  type        = bool
+  default     = true
+}

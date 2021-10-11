@@ -24,3 +24,8 @@ variable required_number_instances {
 variable database_ip {
   description = "Database ip"
 }
+variable provisioners_required {
+  description = "Enabling and disabling provosioners"
+  type        = bool
+  default     = true
+}
