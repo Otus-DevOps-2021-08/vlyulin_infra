@@ -1,0 +1,11 @@
+cloud_id                  = "b1g8hotugvsdigknos1k"
+folder_id                 = "b1g97nk43unle0o4u325"
+zone                      = "a"
+public_key_path           = "~/.ssh/appuser/appuser.pub"
+private_key_path          = "~/.ssh/appuser/appuser"
+service_account_key_file  = "terraform-key.json"
+required_number_instances = 2
+app_disk_image            = "fd8mskqoaaj0fn762r5l"
+db_disk_image             = "fd8jtofj705qpnhrr2r5"
+lb_port                   = 80
+provisioners_required     = true
