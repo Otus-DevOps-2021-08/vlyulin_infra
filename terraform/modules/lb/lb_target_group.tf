@@ -4,7 +4,7 @@ resource "yandex_lb_target_group" "vl-lb-target-group" {
   folder_id = var.folder_id
 
   dynamic "target" {
-    for_each = var.external_ip_address_app
+    for_each = var.internal_ip_address_app
     content {
       subnet_id = "${var.subnet_id}"
       address   = target.value

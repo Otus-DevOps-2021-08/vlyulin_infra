@@ -34,6 +34,6 @@ module "lb" {
   region_id               = var.region_id
   source                  = "../modules/lb"
   subnet_id               = "${module.vpc.subnet_id}"
-  external_ip_address_app = "${module.app.external_ip_address_app}"
+  internal_ip_address_app = "${module.app.internal_ip_address_app}"
   lb_port                 = var.lb_port
 }
