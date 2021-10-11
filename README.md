@@ -653,6 +653,7 @@ lb_network_ip_address = [
 ```
 
 ## Module hw07-terraform-2 "Создание Terraform модулей для управления компонентами инфраструктуры." <a name="Module-hw07-terraform-2"></a>
+
 > Цель:
 > В данном дз студент продолжит работать с Terraform.
 > Опишет и произведет настройку нескольких окружений при помощи Terraform. Настроит remote backend.
