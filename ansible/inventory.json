@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+if [ "$1" == "--list" ] ; then
+  yc compute instances list --format json | python3 ./files/get_ip_list.py reddit-app reddit-db
+elif [ "$1" == "--host" ]; then
+  echo '{"_meta": {"hostvars": {}}}'
+else
+  echo "{ }"
+fi

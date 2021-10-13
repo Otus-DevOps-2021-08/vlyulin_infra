@@ -10,6 +10,7 @@
 * [Module hw05-packer](#Module-hw05-packer)
 * [Module hw06-terraform-1](#Module-hw06-terraform-1)
 * [Module hw07-terraform-2](#Module-hw07-terraform-2)
+* [Module hw08-ansible-1](#Module-hw08-ansible-1)
 
 # Student
 `
@@ -844,4 +845,385 @@ resource "null_resource" "inst_reddit" {
 49. Установлена и проверена измененная версия приложения с помощью команды
 ```
 terraform apply -auto-approve
+```
+
+## Module hw08-ansible-1 "Написание Ansible плейбуков на основе имеющихся bash скриптов" <a name="Module-hw08-ansible-1"></a>
+
+> Цель:
+> В данном дз студент познакомится с системой управления конфигурацией Ansible. Произведет сборку образа при помощи Ansible и Packer.
+> В данном задании тренируются навыки: работы с Ansible, работы с Packer.
+> Все действия описаны в методическом указании.
+
+1. Создана директория ansible
+2. В директории ansible создан файл requirements.txt с текстом 'ansible>=2.4'
+3. Установлен ansible командой
+```
+pip install -r requirements.txt
+```
+4. Проверене установка с помощью команды `ansible --version`
+Вывод:
+```
+ansible [core 2.11.6]
+  config file = None
+  configured module search path = ['/home/ubuntu/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  ansible python module location = /home/ubuntu/.local/lib/python3.8/site-packages/ansible
+  ansible collection location = /home/ubuntu/.ansible/collections:/usr/share/ansible/collections
+  executable location = /home/ubuntu/.local/bin/ansible
+  python version = 3.8.10 (default, Sep 28 2021, 16:10:42) [GCC 9.3.0]
+  jinja version = 2.10.1
+  libyaml = True
+```
+5. Установлено окружение stage
+```
+cd ./terraform/stage
+terraform apply -auto-approve
+```
+6. Внешний IP приложения app и инстанса db сделаны статическими
+>**_NOTE_:** документация https://cloud.yandex.com/en-ru/docs/vpc/operations/set-static-ip
+```
+yc vpc address list
+```
+Вывод:
+```
++----------------------+------+----------------+----------+------+
+|          ID          | NAME |    ADDRESS     | RESERVED | USED |
++----------------------+------+----------------+----------+------+
+| e9b0ahks9r1glanestr4 |      | 178.154.255.14 | false    | true |
+| e9b0h4vuu5g1toe2mdch |      | 62.84.119.240  | false    | true |
+| e9ba222ojmt9q4cmbv3j |      | 62.84.113.204  | false    | true |
++----------------------+------+----------------+----------+------+
+```
+Установить как статический:
+```
+yc vpc address update --reserved=true e9b0ahks9r1glanestr4
+yc vpc address update --reserved=true e9b0h4vuu5g1toe2mdch
+```
+Вывод:
+```
+id: e9b0ahks9r1glanestr4
+folder_id: b1g97nk43unle0o4u325
+created_at: "2021-10-11T18:28:26Z"
+external_ipv4_address:
+  address: 178.154.255.14
+  zone_id: ru-central1-a
+  requirements: {}
+reserved: true
+used: true
+type: EXTERNAL
+ip_version: IPV4
+
+id: e9b0h4vuu5g1toe2mdch
+folder_id: b1g97nk43unle0o4u325
+created_at: "2021-10-11T18:27:45Z"
+external_ipv4_address:
+  address: 62.84.119.240
+  zone_id: ru-central1-a
+  requirements: {}
+reserved: true
+used: true
+type: EXTERNAL
+ip_version: IPV4
+```
+7. Создан файл ansible/inventory в котором указывается информация об инстансе app и параметры SSH для подключения к нему
+```
+appserver ansible_host=178.154.255.14 ansible_user=ubuntu ansible_private_key_file=~/.ssh/ubuntu
+```
+8. Проверена работоспособность ansible и доступность инстанса appserver
+```
+ansible appserver -i ./inventory -m ping
+```
+Вывод:
+```
+appserver | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+```
+9. В файл ansible/inventory добавлена информация об инстансе dbserver и параметры SSH для подключения к нему
+```
+dbserver  ansible_host=62.84.119.240 ansible_user=ubuntu ansible_private_key_file=~/.ssh/ubuntu/ubuntu
+```
+10. Проверена доступность инстанса dbserver
+```
+ansible dbserver -i ./inventory -m ping
+```
+Вывод:
+```
+dbserver | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+```
+11. Создан файл конфигурации ansible/ansible.cfg в котором определено следующее содержание:
+```
+[defaults]
+inventory = ./inventory
+remote_user = ubuntu
+private_key_file = ~/.ssh/ubuntu/ubuntu
+host_key_checking = False
+retry_files_enabled = False
+```
+12. Удалена избыточная информацию из файла ansible/inventory. Теперь файл inventory выглядит так:
+```
+appserver ansible_host=178.154.255.14
+dbserver  ansible_host=62.84.119.240
+```
+Остальные параметры будут взяты из файла ansible/ansible.cfg
+13. Проверена работоспособность и доступность с помощью команды:
+```
+ansible dbserver -m command -a uptime
+```
+Вывод:
+```
+dbserver | CHANGED | rc=0 >>
+ 20:01:30 up  1:32,  1 user,  load average: 0.00, 0.00, 0.00
+```
+14. В файл ansible/inventory добавлены группы:
+```
+[app]
+appserver ansible_host=178.154.255.14
+
+[db]
+dbserver  ansible_host=62.84.119.240
+```
+15. Проверена работа через управление группой:
+```
+ansible app -m ping
+```
+Вывод:
+```
+appserver | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+```
+16. Создан файл inventory.yml и в него перенесена информация из файла inventory.
+```
+app:
+  hosts:
+    appserver:
+      ansible_host: 178.154.255.14
+db:
+  hosts:
+    dbserver:
+      ansible_host: 62.84.119.240
+```
+17. Проверка работоспособности командой
+```
+ansible all -m ping -i inventory.yml
+```
+Вывод:
+```
+appserver | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+```
+18. Проверка установлены ли компоненты для работы приложения (ruby и bundler) на app сервере:
+```
+ansible app -m command -a 'ruby -v'
+```
+Вывод:
+```
+appserver | CHANGED | rc=0 >>
+ruby 2.3.1p112 (2016-04-26) [x86_64-linux-gnu]
+```
+
+```
+ansible app -m command -a 'bundler -v'
+```
+Вывод:
+```
+appserver | CHANGED | rc=0 >>
+Bundler version 1.11.2
+```
+19. Проверка на хосте с БД статус сервиса MongoDB одной из команд:
+```
+ansible db -m command -a 'systemctl status mongod'
+ansible db -m shell -a 'systemctl status mongod'
+ansible db -m systemd -a name=mongod
+ansible db -m service -a name=mongod
+```
+20. Клонирован репозиторий с приложением на app сервер
+```
+ansible app -m git -a 'repo=https://github.com/express42/reddit.git dest=/home/ubuntu/reddit'
+```
+Вывод:
+```
+appserver | CHANGED => {
+    "after": "5c217c565c1122c5343dc0514c116ae816c17ca2",
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "before": null,
+    "changed": true
+}
+```
+>**_NOTE_:** Повторное выполнение команды проходит успешно:
+Вывод:
+```
+appserver | SUCCESS => {
+    "after": "5c217c565c1122c5343dc0514c116ae816c17ca2",
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "before": "5c217c565c1122c5343dc0514c116ae816c17ca2",
+    "changed": false,
+    "remote_url_changed": false
+}
+```
+21. Протестировано выполнение команды с модулем command
+```
+ansible app -m command -a 'git clone https://github.com/express42/reddit.git dest=/home/ubuntu/reddit'
+```
+Вывод:
+```
+appserver | CHANGED | rc=0 >>
+Cloning into 'dest=/home/ubuntu/reddit'...
+```
+Повторное выполнение:
+```
+appserver | FAILED | rc=128 >>
+fatal: destination path 'dest=/home/ubuntu/reddit' already exists and is not an empty directory.non-zero return code
+```
+22. Создан файл ansible/clone.yml с содержимым:
+```
+---
+- name: Clone
+  hosts: app
+  tasks:
+    - name: Clone repo
+      git:
+        repo: https://github.com/express42/reddit.git
+        dest: /home/appuser/reddit
+```
+23. Выполнена команда:
+```
+ansible-playbook clone.yml
+```
+Вывод:
+```
+PLAY [Clone] ***********************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************
+ok: [appserver]
+
+TASK [Clone repo] ******************************************************************************************************
+ok: [appserver]
+
+PLAY RECAP *************************************************************************************************************
+appserver                  : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+24. Удалены скаченные ранее источники приложения на инстрансе app
+```
+ansible app -m command -a 'rm -rf ~/reddit'
+```
+Вывод
+```
+appserver | CHANGED | rc=0 >>
+```
+25. Повторно выполнена команда `ansible-playbook clone.yml`
+Вывод
+```
+PLAY [Clone] ***********************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************
+ok: [appserver]
+
+TASK [Clone repo] ******************************************************************************************************
+changed: [appserver]
+
+PLAY RECAP *************************************************************************************************************
+appserver                  : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+Благодаря реализованной в ansible идемпотентности, ansible определил изменения на окружении (удалена директория ~/reddit)
+и необходимость повторно выполнить клонирования репозитория reddit.git.
+О чем и говорит строка `changed=1` в выводе.
+
+#### Задание со * "Создание динамического inventory"
+26. Создан скрипт files/get_ip_list.py
+```
+import sys, json
+import fnmatch
+import objectpath
+
+if len(sys.argv) == 1:
+    print("{}")
+    exit;
+
+grps = dict.fromkeys(sys.argv[1:],[])
+
+json_data = json.load(sys.stdin)
+tree = objectpath.Tree(json_data)
+
+for key in grps.keys():
+    ips = tree.execute('$.*[@.labels.tags is "' + key + '"].network_interfaces..primary_v4_address.one_to_one_nat.address')
+    ipsl = list(ips)
+    grps[key] = {"hosts": ipsl}
+
+print(json.dumps(grps, indent=4, sort_keys=True))
+```
+27. Создан скрипт inventory.json
+```
+#!/usr/bin/env bash
+
+if [ "$1" == "--list" ] ; then
+  yc compute instances list --format json | python3 ./files/get_ip_list.py reddit-app reddit-db
+elif [ "$1" == "--host" ]; then
+  echo '{"_meta": {"hostvars": {}}}'
+else
+  echo "{ }"
+fi
+
+```
+28. Файл inventory.json указан в ansible.cfg
+```
+[defaults]
+inventory = ./inventory.json
+remote_user = ubuntu
+private_key_file = ~/.ssh/ubuntu/ubuntu
+host_key_checking = False
+retry_files_enabled = False
+```
+29. Проверка работы динамического inventory
+```
+ansible all --list
+```
+Вывод:
+```
+  hosts (2):
+    178.154.255.174
+    84.201.173.7
+```
+```
+ansible all -m ping
+```
+Вывод:
+```
+178.154.255.174 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+84.201.173.7 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
 ```
