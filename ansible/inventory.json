@@ -1,17 +1,30 @@
 #!/usr/bin/env bash
 
+backuppass="{
+	"app" : {
+		"hosts" : [
+			"178.154.255.14"
+		]
+	},
+	"db" : {
+		"hosts" : [
+			"62.84.119.240"
+		]
+	}
+}"
+
+
 if [ "$1" == "--list" ] ; then
-  # output=$(yc34 compute instances list --format json | python3 ./files/get_ip_list.py reddit-app reddit-db)
   output=$(yc34 compute instances list --format json 2> /dev/null)
   if [ $? -ne 127 ]; then
-    ret = $(python3 ./files/get_ip_list.py reddit-app reddit-db 2> /dev/null)
+    ret=$(echo "$output" | python3 ./files/get_ip_list.py reddit-app reddit-db 2> /dev/null)
     if [ $? -ne 127 ]; then
-       echo $ret
+       echo "$ret"
     else
-       echo "{ }"
+       echo "$backuppass"
     fi
   else
-    echo "{ }"
+    echo "$backuppass"
   fi
 elif [ "$1" == "--host" ]; then
   echo '{"_meta": {"hostvars": {}}}'
