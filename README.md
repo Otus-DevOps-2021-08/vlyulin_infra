@@ -1153,7 +1153,8 @@ appserver                  : ok=2    changed=1    unreachable=0    failed=0    s
 О чем и говорит строка `changed=1` в выводе.
 
 #### Задание со * "Создание динамического inventory"
-26. Создан скрипт files/get_ip_list.py
+26. Выполнена установка модуля pip install objectpath
+27. Создан скрипт files/get_ip_list.py
 ```
 import sys, json
 import fnmatch
@@ -1175,7 +1176,7 @@ for key in grps.keys():
 
 print(json.dumps(grps, indent=4, sort_keys=True))
 ```
-27. Создан скрипт inventory.json
+28. Создан скрипт inventory.json
 ```
 #!/usr/bin/env bash
 
@@ -1188,7 +1189,7 @@ else
 fi
 
 ```
-28. Файл inventory.json указан в ansible.cfg
+29. Файл inventory.json указан в ansible.cfg
 ```
 [defaults]
 inventory = ./inventory.json
@@ -1197,7 +1198,7 @@ private_key_file = ~/.ssh/ubuntu/ubuntu
 host_key_checking = False
 retry_files_enabled = False
 ```
-29. Проверка работы динамического inventory
+30. Проверка работы динамического inventory
 ```
 ansible all --list
 ```
