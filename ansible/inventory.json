@@ -1,20 +1,10 @@
 #!/usr/bin/env bash
 
 if [ "$1" == "--list" ] ; then
-cat<<EOF
-{
-	"app" : {
-		"hosts" : [
-			"178.154.255.14"
-		]
-	},
-	"db" : {
-		"hosts" : [
-			"62.84.119.240"
-		]
-	}
-}
-EOF
+  yc compute instances list --format json | python3 ./files/get_ip_list.py reddit-app reddit-db
+  if [ $? -ne 0 ]; then
+     echo "{ }"
+  fi
 elif [ "$1" == "--host" ]; then
   echo '{"_meta": {"hostvars": {}}}'
 else
