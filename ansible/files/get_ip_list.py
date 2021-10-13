@@ -14,6 +14,6 @@ tree = objectpath.Tree(json_data)
 for key in grps.keys():
     ips = tree.execute('$.*[@.labels.tags is "' + key + '"].network_interfaces..primary_v4_address.one_to_one_nat.address')
     ipsl = list(ips)
-    grps[key] = {"hosts": ipsl}
+    grps[key.replace("reddit-","")] = {"hosts": ipsl}
 
 print(json.dumps(grps, indent=4, sort_keys=True))

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-backuppass='{ "reddit-app" : { "hosts" : [ "178.154.255.14" ] }, "reddit-db" : { "hosts" : [ "62.84.119.240" ] }, "all" : { "hosts" : [ "178.154.255.14", "62.84.119.240" ] } }'
-
+backuppass='{ "app" : { "hosts" : [ "178.154.255.14" ] }, "db" : { "hosts" : [ "62.84.119.240" ] } }'
+# backuppass='{ "app" : { "hosts" : [ "178.154.255.14" ] }, "db" : { "hosts" : [ "62.84.119.240" ] }, "all" : { "hosts" : [ "178.154.255.14", "62.84.119.240" ] } }'
 
 if [ "$1" == "--list" ] ; then
   output=$(yc34 compute instances list --format json 2> /dev/null)
