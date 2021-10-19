@@ -37,3 +37,14 @@ module "lb" {
   internal_ip_address_app = "${module.app.internal_ip_address_app}"
   lb_port                 = var.lb_port
 }
+
+# generate inventory file for Ansible
+resource "local_file" "hosts_cfg" {
+  content = templatefile("${path.module}/../templates/hosts.tpl",
+    {
+      app_ips = module.app.internal_ip_address_app
+      db_ips = list(module.db.external_ip_address_db)
+    }
+  )
+  filename = "../../ansible/inventory/prod_hosts.cfg"
+}
