@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+backuppass='{ }'
+
+if [ "$1" == "--list" ] || [ "$1" == "--all" ] ; then
+  output=$(yc compute instances list --format json 2> /dev/null)
+  if [ $? -ne 127 ]; then
+    ret=$(echo "$output" | python3 ./files/get_ip_list.py '{"reddit-app":"app", "reddit-db":"db"}' 2> /dev/null )
+    if [ $? -ne 127 ]; then
+       echo "$ret"
+    else
+       echo "$backuppass"
+    fi
+  else
+    echo "$backuppass"
+  fi
+elif [ "$1" == "--host" ]; then
+  echo '{"_meta": {"hostvars": {}}}'
+else
+  echo "{ }"
+fi

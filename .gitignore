@@ -6,3 +6,6 @@ key.json
 *.tfvars
 .terraform/
 credentials.aws
+*.retry
+keys.tf
+yacloud_compute.yml

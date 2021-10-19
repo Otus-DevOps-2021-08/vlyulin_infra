@@ -11,6 +11,7 @@
 * [Module hw06-terraform-1](#Module-hw06-terraform-1)
 * [Module hw07-terraform-2](#Module-hw07-terraform-2)
 * [Module hw08-ansible-1](#Module-hw08-ansible-1)
+* [Module hw09-ansible-2](#Module-hw08-ansible-2)
 
 # Student
 `
@@ -216,7 +217,7 @@ git update-index --chmod=+x
 
 1. Создана ветка packer-base
 2. Наработки с предыдущего ДЗ перенесены в директорию config-scripts
-3. Установлена и проверена установка программы parcker
+3. Установлена и проверена установка программы packer (https://www.packer.io/downloads)
 4. Создан сервисный аккаунт.
    Для этого:
 
@@ -1227,4 +1228,316 @@ ansible all -m ping
     "changed": false,
     "ping": "pong"
 }
+```
+
+## Module hw09-ansible-2 "Управление настройками хостов и деплой приложения при помощи Ansible" <a name="Module-hw09-ansible-2"></a>
+
+> Цель:
+> В данном дз студент продолжит знакомство с Ansible. Продолжит написание плейбуков для автоматизации конфигурирования серверов.
+> В данном задании тренируются навыки: работы с Ansible, написания плейбуков, формирования инвентарей.
+> Все действия описаны в методическом указании.
+
+1. В terraform отключено автоматическое выполнение provisioners установкой переменной provisioners_required = false в файлах terraform/prod/terraform.tfvars и terraform/stage/terraform.tfvars
+
+### Один playbook, один сценарий
+2. В .gitignore добавлена маска *.retry
+3. Создан playbook reddit_app.yml в директории ansible содержимое которого оформлено в соответствии с заданием.
+4. Создана директория templates и в ней шаблон mongod.conf.j2
+5. Проверено, что все настроено без ошибок:
+```
+cd .\ansible
+ansible-playbook reddit_app.yml --check --limit db
+```
+вывод:
+```
+PLAY [Configure hosts & deploy application] ****************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************
+ok: [178.154.221.193]
+
+TASK [Change mongo config file] ****************************************************************************************
+changed: [178.154.221.193]
+
+PLAY RECAP *************************************************************************************************************
+178.154.221.193            : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+6. Выполнено применение playbook
+```
+ansible-playbook reddit_app.yml --limit db
+```
+вывод
+```
+PLAY RECAP *************************************************************************************************************
+178.154.221.193            : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+### Настройка инстанса приложения
+7. Создана директория .ansible/files у в нее скопирован файл puma.service
+8. В ansible/reddit-app.yml добавлено копирование unit-файла на хост приложения, добавлен новый handler для рестарта сервиса приложения.
+9. Создан шаблон templates/db_config.j2
+10. Добавлена задача "Add config for DB connection" в файл ansible/reddit_app.yml
+11. Выполнено применение задач плейбука с тегом app-tag для группы хостов app:
+```
+ansible-playbook reddit_app.yml --check --limit app --tags app-tag
+```
+вывод:
+```
+PLAY [Configure hosts & deploy application] ****************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************
+ok: [62.84.114.226]
+
+TASK [Add unit file for Puma] ******************************************************************************************
+changed: [62.84.114.226]
+
+TASK [Add config for DB connection] ************************************************************************************
+changed: [62.84.114.226]
+
+TASK [enable puma] *****************************************************************************************************
+ok: [62.84.114.226]
+
+RUNNING HANDLER [reload puma] ******************************************************************************************
+changed: [62.84.114.226]
+
+PLAY RECAP *************************************************************************************************************
+62.84.114.226              : ok=5    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+
+### Деплой приложения
+12. В файл ansible/reddit_app.yaml добавлены задачи 'Fetch the latest version of application code' и 'Bundle install'
+13. Выполнена установка приложения
+```
+ansible-playbook reddit_app.yml --limit app --tags deploy-tag
+```
+14. Проверена работоспособность приложения
+
+### Один плейбук, несколько сценариев
+15. Создан файл ansible/reddit_app2.yml и в нем определены два сценария "Configure MongoDB" и "Configure App"
+16. Проверена работа сценариев:
+```
+ansible-playbook reddit_app2.yml --tags db-tag --check
+ansible-playbook reddit_app2.yml --tags db-tag
+ansible-playbook reddit_app2.yml --tags app-tag --check
+ansible-playbook reddit_app2.yml --tags app-tag
+```
+17. В файл ansible/reddit_app2.yml добавлен сценарий "Deploy app"
+18. Проверена работа сценария "Deploy app"
+```
+ansible-playbook reddit_app2.yml --tags deploy-tag --check
+ansible-playbook reddit_app2.yml --tags deploy-tag
+```
+
+### Несколько плейбуков
+19. В директории ansible созданы три файла app.yml, db.yml и deploy.yml
+20. Переименованы playbooks: reddit_app.yml => reddit_app_one_play.yml и reddit_app2.yml => reddit_app_multiple_plays.yml
+21. Создан файл ansible/site.yml
+22. Выполнена проверка и установка приложения:
+```
+ansible-playbook site.yml --check
+ansible-playbook site.yml
+```
+
+### Задание со * "Использование dynamic inventory для ya.cloud"
+
+23. Для dynamic inventory взято решение https://github.com/rodion-goritskov/yacloud_compute, которое реализовано как invetory plugin для ansible.
+24. Файл yacloud_compute.py с github выложить в директорию ./ansible/inventory_plugins
+25. Создан файл ./inventory/yacloud_compute.yml
+```
+plugin: yacloud_compute
+yacloud_token: Yandex Oauth token is taken by https://oauth.yandex.com/authorize?response_type=token&client_id=1a6990... As example: AQAAA...
+yacloud_clouds:
+ - cloud-lyulinve
+yacloud_folders:
+ - infra
+```
+26. Выполнена проверка, что yacloud_compute inventory plugin доступен
+```
+ansible-doc -t inventory inventory/yacloud_compute  --playbook-dir=./
+```
+вывод:
+```
+> YACLOUD_COMPUTE    (.../ansible/inventory_plugins/yacloud_compute.>
+
+        Get inventory hosts from Yandex Cloud Uses a YAML configuration file that ends with
+        `yacloud_compute.(yml|yaml').
+
+OPTIONS (= is mandatory):
+...
+```
+27. Проверена работоспособность yacloud_compute inventory plugin
+```
+ansible -i inventory/yacloud_compute.yml --playbook-dir=./ --list-hosts all
+```
+вывод:
+```
+  hosts (2):
+    reddit-db
+    reddit-app-0
+```
+
+```
+ansible -i inventory/yacloud_compute.yml --playbook-dir=./ all -m ping
+```
+вывод:
+```
+reddit-app-0 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+reddit-db | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+```
+28. Чтобы не вводить каждый раз ключю "--playbook-dir=./ -i inventory/yacloud_compute.yml" данные параметры указаны в ansible.cfg
+```
+[defaults]
+playbook_dir = ./
+inventory = ./inventory/yacloud_compute.yml
+```
+теперь можно ключи не указывать:
+```
+ansible --list-hosts all
+```
+вывод:
+```
+  hosts (2):
+    reddit-db
+    reddit-app-0
+```
+
+### Второй вариант. Формирования inventory через terraform (не является динамическим)
+29. Этот вариант использовался до настройки dynamic inventory. И спасал от новых ip, которые назначались при каждой новой установке окружения.
+Решение заключалось в автоматической генерации inventory файла для ansible при выполнении terraform скриптов.
+Для этого в файлы ./terraform/stage/main.tf и ./terraform/prod/main.tf добавлен следующий ресурс:
+```
+# generate inventory file for Ansible
+resource "local_file" "hosts_cfg" {
+  content = templatefile("${path.module}/../templates/hosts.tpl",
+    {
+      app_ips = module.app.external_ip_address_app
+      db_ips = list(module.db.external_ip_address_db)
+    }
+  )
+  filename = "../../ansible/inventory/stage_hosts.cfg"
+}
+```
+
+Создан шаблон hosts.tpl:
+```
+[app]
+%{ for ip in app_ips ~}
+${ip}
+%{ endfor ~}
+
+[db]
+%{ for ip in db_ips ~}
+${ip}
+%{ endfor ~}
+```
+
+В файле .\ansible\ansible.cfg указано использование соответствующего сгенерированного inventory
+```
+inventory = ./inventory/stage_hosts.cfg
+```
+
+Пример сгенерированного файла .\ansible\ansible.cfg
+```
+[app]
+62.84.119.168
+
+[db]
+62.84.114.88
+```
+
+Выполнена проверка работоспособности со сгенерированным inventory в terraform:
+```
+ansible --list-hosts all
+```
+
+Вывод:
+```
+ ubuntu@vlulinhp:~/vlyulin_infra/ansible$ ansible --list-hosts all
+  hosts (2):
+    192.168.10.31
+    178.154.221.193
+```
+
+### Третий вариант. Homemade dynamic inventory, разработка которого была начата в прошлом домашнем задании
+30. Доработан скрипт генерации динамического inventory .\ansible\files\get_ip_list.py.
+Теперь его можно вызывать с передачей dictionary в котором указывается tag по которому искать инстансы и наименование группы в которую они дложны быть включены.
+В основе лежит получение информация об инстансах командой yc compute instances list --format json
+
+Пример вызова с передачей dictionary:
+```
+yc compute instances list --format json | python3 ./files/get_ip_list.py '{"red
+dit-app":"app", "reddit-db":"db"}'
+```
+
+Создан bash скрипт .\ansible\inventory\inventory.json, который сделан исполняемым chmod +x
+
+В файле .\ansible\ansible.cfg указывается:
+```
+inventory = ./inventory/inventory.json
+```
+
+Пример вывода команды ansible --list-hosts all:
+```
+{
+    "app": {
+        "hosts": [
+            "178.154.223.96"
+        ]
+    },
+    "db": {
+        "hosts": [
+            "178.154.221.193"
+        ]
+    }
+}
+```
+
+### Провижининг в Packer
+>**_Note_**: Опишите с помощью модулей Ansible в плейбукахansible/packer_app.yml и ansible/packer_db.yml действия, аналогичные bash-скриптам,
+которые сейчас используются в нашей конфигурации Packer.
+
+31. Созданы файлы ansible/packer_app.yml и ansible/packer_db.yml
+32. В файл ansible/packer_db.yml добавлен "allow_unauthenticated: true", иначе ругалось на неавторизованную установку
+```
+- name: Install mongodb package
+    apt:
+      name: mongodb-org
+      state: present
+      allow_unauthenticated: true
+```
+33. Внесены изменения в файлы packer/app.json и packer/db.json. Provisioners с bash скриптов заменены на ansible tasks.
+34. В packer/db.json добавлен пользователь
+```
+    "provisioners": [
+        {
+            "type": "ansible",
+            "playbook_file": "ansible/packer_db.yml",
+            "ansible_env_vars": [ "user=ubuntu" ]
+        }
+    ]
+```
+33. Проверены изменения:
+```
+packer validate -var-file=./variables.json ./app.json
+packer validate -var-file=./variables.json ./db.json
+```
+34. Так как подсеть пересоздается, то надо поменять subnet_id в файле .\packer\variables.json
+Получение sublet_id (в колонке ID):
+```
+yc vpc subnet list
+```
+35. Из корня vlyulin_infra создать образы:
+```
+packer build -var-file=./packer/variables.json ./packer/db.json
+packer build -var-file=./packer/variables.json ./packer/app.json
 ```

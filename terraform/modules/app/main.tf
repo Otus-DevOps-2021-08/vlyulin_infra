@@ -40,9 +40,9 @@ locals {
 }
 
 resource "null_resource" "inst_reddit" {
+
     # count = var.provisioners_required ? 1 : 0
     for_each = local.lvar_instances_ips
-    # for_each = toset(yandex_compute_instance.app.*.network_interface.0.nat_ip_address)
 
     triggers = {
       list_value_ip = each.value
