@@ -1340,7 +1340,7 @@ ansible-playbook site.yml
 
 23. Для dynamic inventory взято решение https://github.com/rodion-goritskov/yacloud_compute, которое реализовано как invetory plugin для ansible.
 24. Файл yacloud_compute.py с github выложить в директорию ./ansible/inventory_plugins
-25. Создан файл ./inventory/yacloud_compute.yml
+25. Создан файл ./inventories/yacloud_compute.yml
 ```
 plugin: yacloud_compute
 yacloud_token: Yandex Oauth token is taken by https://oauth.yandex.com/authorize?response_type=token&client_id=1a6990... As example: AQAAA...
@@ -1351,7 +1351,9 @@ yacloud_folders:
 ```
 26. Выполнена проверка, что yacloud_compute inventory plugin доступен
 ```
-ansible-doc -t inventory inventory/yacloud_compute  --playbook-dir=./
+ansible-doc -t inventory inventories/yacloud_compute  --playbook-dir=./
+после настройки ansible.cfg
+ansible-doc -t inventory yacloud_compute
 ```
 вывод:
 ```
@@ -1365,7 +1367,7 @@ OPTIONS (= is mandatory):
 ```
 27. Проверена работоспособность yacloud_compute inventory plugin
 ```
-ansible -i inventory/yacloud_compute.yml --playbook-dir=./ --list-hosts all
+ansible -i inventories/yacloud_compute.yml --playbook-dir=./ --list-hosts all
 ```
 вывод:
 ```
@@ -1375,7 +1377,7 @@ ansible -i inventory/yacloud_compute.yml --playbook-dir=./ --list-hosts all
 ```
 
 ```
-ansible -i inventory/yacloud_compute.yml --playbook-dir=./ all -m ping
+ansible -i inventories/yacloud_compute.yml --playbook-dir=./ all -m ping
 ```
 вывод:
 ```
@@ -1394,11 +1396,11 @@ reddit-db | SUCCESS => {
     "ping": "pong"
 }
 ```
-28. Чтобы не вводить каждый раз ключю "--playbook-dir=./ -i inventory/yacloud_compute.yml" данные параметры указаны в ansible.cfg
+28. Чтобы не вводить каждый раз ключю "--playbook-dir=./ -i inventories/yacloud_compute.yml" данные параметры указаны в ansible.cfg
 ```
 [defaults]
 playbook_dir = ./
-inventory = ./inventory/yacloud_compute.yml
+inventory = ./inventories/yacloud_compute.yml
 ```
 теперь можно ключи не указывать:
 ```
@@ -1424,7 +1426,7 @@ resource "local_file" "hosts_cfg" {
       db_ips = list(module.db.external_ip_address_db)
     }
   )
-  filename = "../../ansible/inventory/stage_hosts.cfg"
+  filename = "../../ansible/inventories/stage_hosts.cfg"
 }
 ```
 
@@ -1443,7 +1445,7 @@ ${ip}
 
 В файле .\ansible\ansible.cfg указано использование соответствующего сгенерированного inventory
 ```
-inventory = ./inventory/stage_hosts.cfg
+inventory = ./inventories/stage_hosts.cfg
 ```
 
 Пример сгенерированного файла .\ansible\ansible.cfg
@@ -1483,7 +1485,7 @@ dit-app":"app", "reddit-db":"db"}'
 
 В файле .\ansible\ansible.cfg указывается:
 ```
-inventory = ./inventory/inventory.json
+inventory = ./inventories/inventory.json
 ```
 
 Пример вывода команды ansible --list-hosts all:
