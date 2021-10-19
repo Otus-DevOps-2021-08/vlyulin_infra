@@ -1,12 +1,8 @@
-{
-    "app": {
-        "hosts": [
-            "178.154.223.96"
-        ]
-    },
-    "db": {
-        "hosts": [
-            "178.154.221.193"
-        ]
-    }
-}
+app:
+  hosts:
+    appserver:
+      ansible_host: 178.154.202.195
+db:
+  hosts:
+    dbserver:
+      ansible_host: 130.193.51.104
