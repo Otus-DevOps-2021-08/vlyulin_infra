@@ -1,0 +1,6 @@
+plugin: yacloud_compute
+yacloud_token: Yandex Oauth token is taken by https://oauth.yandex.com/authorize?response_type=token&client_id=1a6990... As example: AQAAA...
+yacloud_clouds:
+ - cloud-lyulinve
+yacloud_folders:
+ - infra

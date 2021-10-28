@@ -11,7 +11,9 @@
 * [Module hw06-terraform-1](#Module-hw06-terraform-1)
 * [Module hw07-terraform-2](#Module-hw07-terraform-2)
 * [Module hw08-ansible-1](#Module-hw08-ansible-1)
-* [Module hw09-ansible-2](#Module-hw08-ansible-2)
+* [Module hw09-ansible-2](#Module-hw09-ansible-2)
+* [Module hw10-ansible-3](#Module-hw10-ansible-3)
+
 
 # Student
 `
@@ -1543,3 +1545,287 @@ yc vpc subnet list
 packer build -var-file=./packer/variables.json ./packer/db.json
 packer build -var-file=./packer/variables.json ./packer/app.json
 ```
+
+## Module hw10-ansible-3 "Написание Ansible ролей для управления конфигурацией сервисов и настройками хостов." <a name="Module-hw10-ansible-3"></a>
+
+> Цель:
+> В данном дз студент научится организовывать репозитории для работы с несколькими окружениями. Научится работать с Ansible Galaxy и комьюнити ролями.
+> В данном задании тренируются навыки: работы с ansible, организации репозиториев, работы с Ansible Galaxy.
+> Все действия описаны в методическом указании.
+
+1. Создана директория ./ansible/roles
+2. В директории ./ansible/roles созданы заготовки ролей app и db
+```
+ansible-galaxy init app
+ansible-galaxy init db
+```
+3. Секция tasks в сценарии плейбука ansible/db.yml скопирована в .\ansible\roles\db\tasks\main.yml
+4. Файл ansible\templates\mongod.conf.j2  скопирован в ansible\roles\db\templates\mongod.conf.j2
+5. Handler из ansible\db.yml перенесен в ansible\roles\db\handlers\main.yml
+6. Переменные из ansible\db.yml перенесены в ansible\roles\db\defaults\main.yml
+7. Секция tasks в сценарии плейбука ansible\app.yml скопирована в .\ansible\roles\app\tasks\main.yml
+8. Файл ansible\templates\db_config.j2 скопирован в ansible\roles\app\templates\db_config.j2
+9. Файл ansible\files\puma.service скопирован в ansible\roles\app\files\puma.service
+10. Handler из ansible\app.yml перенесен в ansible\roles\app\handlers\main.yml
+11. Определена переменная по умолчанию для адреса подключения к MongoDB в файле ansible\roles\app\defaults\main.yml
+12. В файле ansible/app.yml удалены задачи и handlers, добавлен вызов роли app
+13. В файле ansible/db.yml удалены задачи и handlers, добавлен вызов роли db
+14. Проверена настройка и установка приложения:
+```
+ansible-playbook site.yml --check
+ansible-playbook site.yml
+```
+15. Создана директории ansible/environments/stage и ansible/environments/prod
+17. Скопированы inventory файлы в директории ansible/environments/stage и ansible/environments/prod
+18. В файлах ./terraform/stage/main.tf и ./terraform/prod/main.tf исправлены пути генереции inventory файлов
+19. В ansible/ansible.cfg определено окружение по умолчанию
+```
+[defaults]
+inventory = ./ansible/environments/stage/stage_hosts.cfg
+```
+20. Созданы директории ./ansible/environments/stage/group_var и ./ansible/environments/prod/group_var для определения переменных для групп хостов
+21. Созданы файлы ./ansible/environments/stage/group_var/db и ./ansible/environments/prod/group_var/db в которые перенесена переменная из ansible/db.yaml
+22. Секция vars удалена из ansible/db.yaml
+23. Создан файл ansible/environments/stage/group_var/all для переменных всех окружений указанных в inventory файле
+24. Скопированы файлы all, app и db из директории ansible/environments/stage/group_var в директорию ansible/environments/prod/group_var
+25. В файле ansible/environments/prod/group_vars/all установлена переменная env: prod
+26. Определена переменная по умолчанию env: local в файлах ansible/roles/app/defaults/main.yml и ansible/roles/db/defaults/main.yml
+27. Добавлены задачи вывода информации о наименовании окружения в файлы ansible/roles/app/tasks/main.yml и ansible/roles/db/tasks/main.ym
+28. Создана директория anisible/playbooks в которую перенесены актуальные playbooks и директория ansible/old куда перенесены ненужные playbooks
+29. В файле ansible.cfg указан путь к папке roles
+30. Созданы окружения
+```
+terraform destroy
+terraform apply -auto-approve=false
+```
+31. Проверена настройка и сформировано окружение stage с помощью команд ansible
+```
+ansible-playbook playbooks/site.yml --check
+ansible-playbook playbooks/site.yml
+```
+32. Проверена настройка и сформировано окружение prod с помощью команд ansible
+```
+ansible-playbook -i environments/prod/prod_hosts.cfg playbooks/site.yml --check
+ansible-playbook -i environments/prod/prod_hosts.cfg playbooks/site.yml
+```
+### Работа с Community-ролями
+33. Созданы файлы environments/stage/requirements.yml и environments/prod/requirements.yml
+34. Установлена роль
+```
+ansible-galaxy install -r environments/stage/requirements.yml
+```
+35. Настроен nginx в файлах stage/group_vars/app и prod/group_vars/app
+```
+nginx_sites:
+  default:
+    - listen 80
+    - server_name "reddit"
+    - location / {
+        proxy_pass http://127.0.0.1:9292;
+      }
+```
+36. Добавлен вызов роли jdauphant.nginx в плейбук ansible\playbooks\app.yml
+
+37. При выполнении команды ansible-playbook playbooks/site.yml --check из директории ./ansible
+Получаю ошибку:
+```
+TASK [jdauphant.nginx : Create links for sites-enabled] ****************************************************************
+failed: [84.201.133.58] (item={'key': 'default', 'value': ['listen 80', 'server_name "reddit"', 'location / {proxy_pass http://127.0.0.1:9292;}']}) => {"ansible_loop_var": "item", "changed": false, "item": {"key": "default", "value": ["listen 80", "server_name \"reddit\"", "location / {proxy_pass http://127.0.0.1:9292;}"]}, "msg": "src file does not exist, use \"force=yes\" if you really want to create the link: /etc/nginx/sites-available/default.conf", "path": "/etc/nginx/sites-enabled/default.conf", "src": "/etc/nginx/sites-available/default.conf"}
+...ignoring
+...
+TASK [jdauphant.nginx : Start the nginx service] ***********************************************************************
+fatal: [84.201.133.58]: FAILED! => {"changed": false, "msg": "Could not find the requested service nginx: host"}
+```
+Ошибка не случается при установке без флага --check
+
+38. Выполнена установка командой ansible-playbook playbooks/site.yml
+
+### Работа с Ansible Vault
+39. Создан файл ~\.ansible\vault.key с паролем
+40. В секцию default файла ansible/ansible.cfg добавлена строка
+```
+vault_password_file = ~/.ansible/vault.key
+```
+41. Добавлен плейбук ansible/playbooks/users.yml для создания пользователей.
+42. Созданы файлы с данными пользователей для каждого окружения ansible/environments/prod/credentials.yml и ansible/environments/stage/credentials.yml
+43. Зашифрованы файлы используя vault.key с помощью команд:
+```
+ansible-vault encrypt environments/prod/credentials.yml
+ansible-vault encrypt environments/stage/credentials.yml
+```
+44. Проверено шифрование файлов
+45. Плейбук users.yml добавлен в файл site.yml
+```
+- import_playbook: users.yml
+```
+### Задание со *: Работа с динамическим инвентори
+
+46. Для dynamic inventory взято решение https://github.com/rodion-goritskov/yacloud_compute, которое реализовано как invetory plugin для ansible.
+47. Plugin yacloud_compute.py с github выложить в директорию ./ansible/inventory_plugins
+48. Изначально yacloud_compute.py все hosts включает в одну группу yacloud. Поэтому yacloud_compute.py понадобилось доработать. Доработка выполнена в процедуре def _process_hosts(self)
+```
+    def _process_hosts(self):
+        # self.inventory.add_group(group="yacloud")
+        for instance in self.hosts:
+            if instance["status"] == "RUNNING":
+                ip = self._get_ip_for_instance(instance)
+                if ip:
+                    self.inventory.add_host(instance["name"], group="all")
+                    self.inventory.set_variable(instance["name"], 'ansible_host', to_native(ip))
+                    # Determines if composed variables or groups using nonexistent variables is an error
+                    strict = self.get_option('strict')
+                    # Add variables created by the user's Jinja2 expressions to the host
+                    # self._set_composite_vars(self.get_option('compose'), host_vars, hostname, strict=True)
+                    self._set_composite_vars(self.get_option('compose'), {}, instance["name"], strict=True)
+
+                    # The following two methods combine the provided variables dictionary with the latest host variables
+                    # Using these methods after _set_composite_vars() allows groups to be created with the composed variables
+                    self._add_host_to_composed_groups(self.get_option('groups'), {}, instance["name"], strict=strict)
+                    self._add_host_to_keyed_groups(self.get_option('keyed_groups'), {}, instance["name"], strict=strict)
+```
+50. В файле ./inventories/yacloud_compute.yml определить параметры и прописать правила формирования групп:
+
+```
+plugin: yacloud_compute
+yacloud_token: AQA...ok
+yacloud_clouds:
+ - cloud-lyulinve
+yacloud_folders:
+ - infra
+strict: False
+groups:
+ app: inventory_hostname.startswith('reddit-app')
+ db:  inventory_hostname.startswith('reddit-db')
+
+```
+51. В файле ansible.cfg просаны параметры для использования dynamic inventory
+```
+[defaults]
+playbook_dir = ./playbooks
+inventory = ./environments/stage/yacloud_compute.yml
+```
+52. Выполнена проверка, что yacloud_compute inventory plugin доступен
+```
+ansible-doc -t inventory inventories/yacloud_compute  --playbook-dir=./
+после настройки ansible.cfg
+ansible-doc -t inventory yacloud_compute
+```
+вывод:
+```
+> YACLOUD_COMPUTE    (.../ansible/inventory_plugins/yacloud_compute.>
+
+        Get inventory hosts from Yandex Cloud Uses a YAML configuration file that ends with
+        `yacloud_compute.(yml|yaml').
+
+OPTIONS (= is mandatory):
+...
+```
+53. Проверена работоспособность yacloud_compute inventory plugin
+```
+ansible -i environments/stage/yacloud_compute.yml --playbook-dir=./playbooks --list-hosts all
+после настройки ansible.cfg
+ansible --list-hosts all
+```
+вывод:
+```
+  hosts (2):
+    reddit-db
+    reddit-app-0
+```
+
+```
+ansible-inventory -i environments/stage/yacloud_compute.yml --list
+после настройки ansible.cfg
+ansible-inventory --list
+```
+вывод:
+```
+{
+    "_meta": {
+        "hostvars": {
+            "reddit-app-0": {
+                "ansible_host": "178.154.222.110",
+                "env": "stage",
+                "nginx_sites": {
+                    "default": [
+                        "listen 80",
+                        "server_name \"reddit\"",
+                        "location / {proxy_pass http://127.0.0.1:9292;}"
+                    ]
+                }
+            },
+            "reddit-db": {
+                "ansible_host": "84.252.131.160",
+                "env": "stage",
+                "mongo_bind_ip": "0.0.0.0"
+            }
+        }
+    },
+    "all": {
+        "children": [
+            "app",
+            "db",
+            "ungrouped"
+        ]
+    },
+    "app": {
+        "hosts": [
+            "reddit-app-0"
+        ]
+    },
+    "db": {
+        "hosts": [
+            "reddit-db"
+        ]
+    }
+}
+```
+
+54. Проверка работоспособности приложений:
+```
+ansible -i inventories/yacloud_compute.yml --playbook-dir=./ all -m ping
+после настройки ansible.cfg
+ansible all -m ping
+```
+вывод:
+```
+reddit-app-0 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+reddit-db | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "ping": "pong"
+}
+```
+
+### Задание с **: Настройка Github Actions
+
+На основе https://learn.hashicorp.com/tutorials/terraform/github-actions?in=terraform/automation
++ очень полезный пример https://github.com/neillturner/terraform-github-actions/blob/main/.github/workflows/ci.yaml
+
+Зарегестрировался на https://app.terraform.io/session
+На создать организацию и выбрать API-driven workflow
+Создан workspace: vlyulin-workspace
+На закладке variables добавить Environment Variables ???
+На странице https://app.terraform.io/app/settings/tokens через "Create an API token" сгенерировать token
+https://app.terraform.io/app/vlyulin-org/settings/authentication-tokens
+
+Set up a GitHub repository
+navigate to "Settings" then "Secrets". Create a new secret named TF_API_TOKEN, setting the Terraform Cloud API token you created in the previous step as the value.
+
+
+#### В README.md добавлен бейдж с статусом билда
+Выполнено на основе: https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/adding-a-workflow-status-badge
+
+Для комита в main:
+![branch parameter main](https://github.com/Otus-DevOps-2021-08/vlyulin_infra/actions/workflows/run-tests.yml/badge.svg?branch=main)
+
+Для pull request
+![event parameter](https://github.com/Otus-DevOps-2021-08/vlyulin_infra/actions/workflows/run-tests.yml/badge.svg?event=pull_request)
