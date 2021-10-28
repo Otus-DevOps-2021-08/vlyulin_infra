@@ -46,5 +46,5 @@ resource "local_file" "hosts_cfg" {
       db_ips = list(module.db.external_ip_address_db)
     }
   )
-  filename = "../../ansible/inventory/stage_hosts.cfg"
+  filename = "../../ansible/environments/stage/stage_hosts.cfg"
 }

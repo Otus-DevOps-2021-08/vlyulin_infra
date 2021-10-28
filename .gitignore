@@ -9,3 +9,4 @@ credentials.aws
 *.retry
 keys.tf
 yacloud_compute.yml
+jdauphant.nginx
