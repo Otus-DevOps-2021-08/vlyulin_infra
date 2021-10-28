@@ -1820,6 +1820,15 @@ https://app.terraform.io/app/vlyulin-org/settings/authentication-tokens
 Set up a GitHub repository
 navigate to "Settings" then "Secrets". Create a new secret named TF_API_TOKEN, setting the Terraform Cloud API token you created in the previous step as the value.
 
+В файле terraform/main.tf прописать провайдера для terraform. Это берется по ссылке https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs. На странице нажать кнопку "Use provider".
+terraform {
+  required_providers {
+    yandex = {
+      source = "yandex-cloud/yandex"
+      version = "0.65.0"
+    }
+  }
+}
 
 #### В README.md добавлен бейдж с статусом билда
 Выполнено на основе: https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/adding-a-workflow-status-badge
