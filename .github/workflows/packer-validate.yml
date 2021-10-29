@@ -1,7 +1,11 @@
 name: Validate packer template file in a directory
 
-on:
-  pull_request:
+on: push
+#  push:
+#    branches:
+#    - main
+#  pull_request:
+
 jobs:
   packer_validate:
     runs-on: hashicorp/packer:1.6.4
