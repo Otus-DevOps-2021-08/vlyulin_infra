@@ -10,8 +10,8 @@ jobs:
   packer_validate:
     runs-on: hashicorp/packer:1.6.4
     env:
-      TEMPLATE_FILE_NAME = "*.json"
-      PACKER_ACTION_WORKING_DIR = "packer"
+      TEMPLATE_FILE_NAME: *.json
+      PACKER_ACTION_WORKING_DIR: packer
     steps:
       - name: Packer validate template-y without argument
         uses: dawitnida/packer-github-actions/validate@master
