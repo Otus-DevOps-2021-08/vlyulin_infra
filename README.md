@@ -1830,6 +1830,10 @@ terraform {
   }
 }
 
+Tflint
+https://github.com/terraform-linters/setup-tflint
+
+
 #### В README.md добавлен бейдж с статусом билда
 Выполнено на основе: https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/adding-a-workflow-status-badge
 
