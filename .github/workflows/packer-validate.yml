@@ -20,23 +20,17 @@ jobs:
           command: fix
 
       # validate templates
-      # - name: Validate Template
-      #  uses: hashicorp/packer-github-actions@master
-      #  with:
-      #    command: validate
-      #    arguments: -syntax-only
-      #    target: packer.pkr.hcl
+      - name: Validate Template
+        uses: hashicorp/packer-github-actions@master
+        with:
+          command: validate
+          arguments: -syntax-only
+          target: app.json
 
       # validate templates
-      - name: Packer Validate
-        uses: ./
+      - name: Validate Template
+        uses: hashicorp/packer-github-actions@master
         with:
-          command: packer validate -syntax-only app.json
-          working_directory: ./packer
-
-      # validate templates
-      - name: Packer Validate
-        uses: ./
-        with:
-          command: packer validate -syntax-only db.json
-          working_directory: ./packer
+          command: validate
+          arguments: -syntax-only
+          target: db.json
