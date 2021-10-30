@@ -25,4 +25,12 @@ jobs:
         with:
           command: validate
           arguments: -syntax-only
-          target: ./packer
+          target: ./packer/app.json
+
+      # validate templates
+      - name: Validate Template
+        uses: hashicorp/packer-github-actions@master
+        with:
+          command: validate
+          arguments: -syntax-only
+          target: ./packer/db.json
