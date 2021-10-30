@@ -1,17 +1,42 @@
-name: Validate packer template file in a directory
+---
+name: Packer
 
 on:
-  pull_request:
+  push:
+
 jobs:
-  packer_validate:
-    runs-on: hashicorp/packer
-    env:
-      TEMPLATE_FILE_NAME: "*.json"
-      PACKER_ACTION_WORKING_DIR: "packer"
+  packer:
+    runs-on: ubuntu-latest
+    name: packer
+
     steps:
-      - name: Packer validate template-y without argument
-        uses: dawitnida/packer-github-actions/validate@master
-        env:
-          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TEMPLATE_FILE_NAME: ${{ env.TEMPLATE_FILE_NAME }}
-          PACKER_ACTION_WORKING_DIR: ${{ env.PACKER_ACTION_WORKING_DIR }}
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      # fix backwards incompatibilities in template
+      - name: Fix Template
+        uses: hashicorp/packer-github-actions@master
+        with:
+          command: fix
+
+      # validate templates
+      # - name: Validate Template
+      #  uses: hashicorp/packer-github-actions@master
+      #  with:
+      #    command: validate
+      #    arguments: -syntax-only
+      #    target: packer.pkr.hcl
+
+      # validate templates
+      - name: Packer Validate
+        uses: ./
+        with:
+          command: packer validate -syntax-only app.json
+          working_directory: ./packer
+
+      # validate templates
+      - name: Packer Validate
+        uses: ./
+        with:
+          command: packer validate -syntax-only db.json
+          working_directory: ./packer
