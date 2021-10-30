@@ -1810,21 +1810,15 @@ reddit-db | SUCCESS => {
 ```
 
 ### Задание с **: Настройка Github Actions
+#### packer validate для всех шаблонов
+1. Создан файл .github\workflows\packer-validate.yml
 
-На основе https://learn.hashicorp.com/tutorials/terraform/github-actions?in=terraform/automation
-+ очень полезный пример https://github.com/neillturner/terraform-github-actions/blob/main/.github/workflows/ci.yaml
-
-Зарегестрировался на https://app.terraform.io/session
-На создать организацию и выбрать API-driven workflow
-Создан workspace: vlyulin-workspace
-На закладке variables добавить Environment Variables ???
-На странице https://app.terraform.io/app/settings/tokens через "Create an API token" сгенерировать token
-https://app.terraform.io/app/vlyulin-org/settings/authentication-tokens
-
-Set up a GitHub repository
-navigate to "Settings" then "Secrets". Create a new secret named TF_API_TOKEN, setting the Terraform Cloud API token you created in the previous step as the value.
-
-В файле terraform/main.tf прописать провайдера для terraform. Это берется по ссылке https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs. На странице нажать кнопку "Use provider".
+#### terraform validate и tflint для окружений stage и prod
+1. Создан файл .github\workflows\terraform.yml
+2. В файле ./terraform/main.tf прописать провайдера для terraform.
+Это берется по ссылке https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs.
+На странице нажать кнопку "Use provider".
+```
 terraform {
   required_providers {
     yandex = {
@@ -1833,11 +1827,24 @@ terraform {
     }
   }
 }
+```
 
-Tflint
-https://github.com/terraform-linters/setup-tflint
+Информация по Tflint: https://github.com/terraform-linters/setup-tflint
 
 Ошибка при git push: ImportError: cannot import name 'AnsibleCollectionLoader' from 'ansible.utils.collection_loader'
+
+Полезная информация:
+На основе https://learn.hashicorp.com/tutorials/terraform/github-actions?in=terraform/automation
+https://github.com/neillturner/terraform-github-actions/blob/main/.github/workflows/ci.yaml
+
+#### ansible-lint для плейбуков Ansible
+1. Создан файл .github\workflows\ansible-lint.yml
+
+На странице https://app.terraform.io/app/settings/tokens через "Create an API token" сгенерировать token
+https://app.terraform.io/app/vlyulin-org/settings/authentication-tokens
+
+Set up a GitHub repository
+navigate to "Settings" then "Secrets". Create a new secret named TF_API_TOKEN, setting the Terraform Cloud API token you created in the previous step as the value.
 
 https://dev.to/koh_sh/automatic-ansible-lint-with-github-actions-52oe
 
