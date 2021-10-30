@@ -2,7 +2,7 @@
 <module type="JAVA_MODULE" version="4" />
 
 #vlyulin Infra repository
-Для комита в main:
+
 Commit to main: ![branch parameter main](https://github.com/Otus-DevOps-2021-08/vlyulin_infra/actions/workflows/run-tests.yml/badge.svg?branch=main)
 
 Pull request: ![event parameter](https://github.com/Otus-DevOps-2021-08/vlyulin_infra/actions/workflows/run-tests.yml/badge.svg?event=pull_request)
