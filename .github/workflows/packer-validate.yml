@@ -1,9 +1,6 @@
 name: Validate packer template file in a directory
 
 on:
-  push:
-    branches:
-    - main
   pull_request:
 
 jobs:
