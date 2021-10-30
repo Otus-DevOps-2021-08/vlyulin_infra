@@ -9,9 +9,6 @@ jobs:
       TEMPLATE_FILE_NAME: "*.json"
       PACKER_ACTION_WORKING_DIR: "packer"
     steps:
-      - name: packer-validate
-  uses: dawitnida/packer-validate-action@v1.0.5
-
       - name: Packer validate template-y without argument
         uses: dawitnida/packer-github-actions/validate@master
         env:
