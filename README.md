@@ -1831,8 +1831,6 @@ terraform {
 
 Информация по Tflint: https://github.com/terraform-linters/setup-tflint
 
-Ошибка при git push: ImportError: cannot import name 'AnsibleCollectionLoader' from 'ansible.utils.collection_loader'
-
 Полезная информация:
 На основе https://learn.hashicorp.com/tutorials/terraform/github-actions?in=terraform/automation
 https://github.com/neillturner/terraform-github-actions/blob/main/.github/workflows/ci.yaml
@@ -1840,13 +1838,6 @@ https://github.com/neillturner/terraform-github-actions/blob/main/.github/workfl
 #### ansible-lint для плейбуков Ansible
 1. Создан файл .github\workflows\ansible-lint.yml
 
-На странице https://app.terraform.io/app/settings/tokens через "Create an API token" сгенерировать token
-https://app.terraform.io/app/vlyulin-org/settings/authentication-tokens
-
-Set up a GitHub repository
-navigate to "Settings" then "Secrets". Create a new secret named TF_API_TOKEN, setting the Terraform Cloud API token you created in the previous step as the value.
-
-https://dev.to/koh_sh/automatic-ansible-lint-with-github-actions-52oe
-
-#### В README.md добавлен бейдж с статусом билда
+#### В README.md добавлен бейдж со статусом билда
+Бейджи добавлены в начале страницы.
 Выполнено на основе: https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/adding-a-workflow-status-badge
