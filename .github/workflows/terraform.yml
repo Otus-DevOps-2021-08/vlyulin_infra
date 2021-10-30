@@ -45,11 +45,11 @@
 name: 'Terraform'
 
 # should only run when a commit is pushed to the main branch or on any pull requests.
-on: push
-#  push:
-#    branches:
-#    - main
-#  pull_request:
+on:
+  push:
+    branches:
+    - main
+  pull_request:
 
 jobs:
   terraform:
