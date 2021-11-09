@@ -1,0 +1,22 @@
+Host dbserver
+  HostName 127.0.0.1
+  User vagrant
+  Port 2222
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no
+  PasswordAuthentication no
+  IdentityFile C:/_P/OTUSDevOps/Otus-DevOps-2021-08/vlyulin_infra/ansible/.vagrant/machines/dbserver/virtualbox/private_key
+  IdentitiesOnly yes
+  LogLevel FATAL
+
+Host appserver
+  HostName 127.0.0.1
+  User vagrant
+  Port 2200
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no
+  PasswordAuthentication no
+  IdentityFile C:/_P/OTUSDevOps/Otus-DevOps-2021-08/vlyulin_infra/ansible/.vagrant/machines/appserver/virtualbox/private_key
+  IdentitiesOnly yes
+  LogLevel FATAL
+

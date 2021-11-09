@@ -1,7 +1,8 @@
 galaxy_info:
-  author: your name
-  description: your role description
-  company: your company (optional)
+  author: Vadim Lyulin
+  description: db configure
+  company: OTUS
+  namespace: vlyulin
 
   # If the issue tracker for your role is not on github, uncomment the
   # next line and provide a value
@@ -27,6 +28,10 @@ galaxy_info:
   # To view available platforms and versions (or releases), visit:
   # https://galaxy.ansible.com/api/v1/platforms/
   #
+  platforms:
+  - name: Ubuntu
+    versions:
+    - all
   # platforms:
   # - name: Fedora
   #   versions:

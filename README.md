@@ -17,6 +17,7 @@ Pull request: ![event parameter](https://github.com/Otus-DevOps-2021-08/vlyulin_
 * [Module hw08-ansible-1](#Module-hw08-ansible-1)
 * [Module hw09-ansible-2](#Module-hw09-ansible-2)
 * [Module hw10-ansible-3](#Module-hw10-ansible-3)
+* [Module hw11-ansible-4](#Module-hw10-ansible-4)
 
 
 # Student
@@ -1841,3 +1842,348 @@ https://github.com/neillturner/terraform-github-actions/blob/main/.github/workfl
 #### В README.md добавлен бейдж со статусом билда
 Бейджи добавлены в начале страницы.
 Выполнено на основе: https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/adding-a-workflow-status-badge
+
+## Module hw11-ansible-4 "Доработка имеющихся ролей локально с использование Vagrant" <a name="Module-hw11-ansible-4"></a>
+
+> Цель: В данном дз студент научится тестировать написанные ранее роли при помощи Molecule, Testinfra и Vagrant.
+> В данном задании тренируются навыки: работы с molecula, testinfra, bagrant.
+> Все действия описаны в методическом указании.
+
+1. Установлены VirtualBox и Vagrant
+2. Добавлены исключения файлов Vagrant и Molecule в .gitignore
+3. Создан файл ./ansible/Vagrantfile
+4. Создание окружений с помощью команды vagrant up.
+
+---
+**_Note_** 
+Работает только с VirtualBox 6.1.26
+С версией VirtualBox 6.1.28 возникает ошибка:
+```
+Stderr: VBoxManage.exe: error: Call to NEMR0InitVMPart2 failed: VERR_NEM_INIT_FAILED (VERR_NEM_VM_CREATE_FAILED)
+VBoxManage.exe: error: Details: code E_FAIL (0x80004005), component ConsoleWrap, interface IConsole 
+```
+---
+5. Проверка скаченных образов с помощью команды
+```
+vagrant box list  
+```
+вывод:
+```
+ubuntu/xenial64 (virtualbox, 20211001.0.0)
+```
+6. Проверка статусов запущенных машин с помощью команды
+```
+vagrant status
+```
+вывод:
+```
+Current machine states:
+
+dbserver                  running (virtualbox)
+appserver                 running (virtualbox)
+```
+
+7. Проверено соединение к созданным серверам
+Интересные варианты:
+```
+vagrant ssh-config appserver
+ssh -i C:/_P/OTUSDevOps/Otus-DevOps-2021-08/vlyulin_infra/ansible/.vagrant/machines/appserver/virtualbox/private_key -p 2222 vagrant@127.0.0.1
+vagrant ssh --debug
+
+vagrant ssh-config > vagrant-ssh
+ssh -F vagrant-ssh appserver
+```
+
+8. Добавлен provisioner ansible в Vagrant file
+9. Создан ansible/playbooks/base.yml
+10. Вызов base.yml добавлен ansible/playbooks/site.yml и удален users.yml
+11. Не все так просто, когда у тебя windowsи WLS2.
+11.1. В WLS2 необходимо установить virtualbox_WSL2
+Решение найдено тут:
+https://stackoverflow.com/questions/65001570/connection-refused-in-vagrant-using-wsl-2
+https://github.com/Karandash8/virtualbox_WSL2
+Команда:
+```
+vagrant plugin install virtualbox_WSL2
+```
+
+11.2. Из WLS дан доступ к VirtualBox на host (windows)
+```
+edit ~/.profile
+добавить:
+export VAGRANT_WSL_ENABLE_WINDOWS_ACCESS="1"
+export PATH="$PATH:/mnt/c/Program Files/Oracle/VirtualBox"
+```
+
+12. Добавлен файл ansible\roles\db\tasks\install_mongo.yml с шагами установки mongo
+13. Добавлен файл ansible\roles\db\tasks\config_mongo.yml с описанием конфигурации mongo
+14. Вызов install_mongo.yml и config_mongo.yml добавлены в \ansible\roles\db\tasks\main.yml 
+15. При попытке выполнения provision командой ***vagrant provision dbserver*** 
+получена ошибка при выполнении задачи ***TASK [db : Install mongodb package]***:
+``` 
+There were unauthenticated packages and -y was used without --allow-unauthenticated
+```
+Решение:
+Надо добавить параметр `allow_unauthenticated: yes` в файле ansible\roles\db\tasks\install_mongo.yml 
+```
+- name: Install mongodb package
+  apt:
+    name: mongodb-org
+    state: present
+    allow_unauthenticated: yes
+  tags: install
+```
+Поле этих изменений установка mongo прошла успешно:
+```
+TASK [db : Install mongodb package] ********************************************
+The following additional packages will be installed:
+  mongodb-org-mongos mongodb-org-server mongodb-org-shell mongodb-org-tools
+The following NEW packages will be installed:
+  mongodb-org mongodb-org-mongos mongodb-org-server mongodb-org-shell
+  mongodb-org-tools
+0 upgraded, 5 newly installed, 0 to remove and 1 not upgraded.
+changed: [dbserver]
+```
+
+16. Проверена даступность dbserver из сервера appserver
+```
+vagrant ssh appserver
+vagrant@ubuntu-xenial:~$ telnet 10.10.10.10 27017
+Trying 10.10.10.10...
+Connected to 10.10.10.10.
+Escape character is '^]'.
+```
+
+17. Создан файл ansible/roles/app/tasks/ruby.yml в который спорованы задачи из плейбука packer_app.yml
+18. Создан файл ansible/roles/app/tasks/puma.yml и скопированы в него задачи из app/tasks/main.yml, относящиеся к настройке Puma сервера и запуску приложения.
+19. В файл ansible/roles/app/tasks/main.yml добавлен вызов ruby.yml и puma.yml
+20. Определён Ansible провижинер для хоста appserver в Vagrantfile
+21. Применён провижининг для хоста appserver
+```
+vagrant provision appserver
+```
+### Параметризация роли
+22. Добавлен deploy_user: appuser в файл ansible\roles\app\defaults\main.yml 
+23. В файле ansible\roles\app\tasks\puma.yml Заменён модуль для копирования unit файла с copy на template, чтобы иметь возможность параметризировать unit файл
+```
+- name: Add unit file for Puma
+  template:
+    src: puma.service.j2
+    dest: /etc/systemd/system/puma.service
+  notify: reload puma
+```
+24. Файл ansible\roles\app\files\puma.service перемещен в ansible\roles\app\templates\puma.service.j2 
+25. В файле ansible\roles\app\templates\puma.service.j2 все appuser заименены на переменную deploy_user
+26. Параметризирована задача "Add config for DB connection" для возможности указания пользователя в файле ansible\roles\app\tasks\puma.yml 
+27. Параметризирован файл ansible\playbooks\deploy.yml для возможности указания пользователя
+#### Переопределение переменных
+29. Добавлено переопределение пользователя в Vargantfile в определение config.vm.define "appserver"
+```
+ansible.extra_vars = {
+        "deploy_user" => "ubuntu"
+}
+```
+30. Применен provisioner с переопределением пользователя ubuntu для appserver 
+```
+vagrant provision appserver
+```
+Получил ошибку
+```
+TASK [Fetch the latest version of application code] ****************************
+fatal: [appserver]: FAILED! => {"changed": false, "cmd": "/usr/bin/git clone --origin origin https://github.com/express42/reddit.git /home/ubuntu/reddit", "msg": "Cloning into '/home/ubuntu/reddit'...\n/home/ubuntu/reddit/.git: Permission denied", "rc": 1, "stderr": "Cloning into '/home/ubuntu/reddit'...\n/home/ubuntu/reddit/.git: Permission denied\n", "stderr_lines": ["Cloning into '/home/ubuntu/reddit'...", "/home/ubuntu/reddit/.git: Permission denied"], "stdout": "", "stdout_lines": []}
+```
+Добавил become: yes в звдачу "name: Fetch the latest version of application code" в файле deploy.yml
+```
+    - name: Fetch the latest version of application code
+      become: yes
+      git:
+```
+После чего provisioner завершил работу без ошибок.
+
+31. Для доступности приложения с локального хоста в Vagrant файл был добавлен port-forwarding:
+```
+config.vm.define "appserver" do |app|
+    ...
+    app.vm.network :forwarded_port, host: 9292, guest: 9292
+```
+32. Удалены и установлены окружения заново
+```
+vagrant destroy -f
+vagrant up
+```
+### Задание со *
+> Дополните конфигурацию Vagrant для корректной работы проксирования приложения с помощью nginx 
+
+1. 
+
+```
+ansible.extra_vars = {
+        "deploy_user" => "ubuntu",
+        nginx_sites: {
+          default: ["listen 80", "server_name 'reddit'", "location / {proxy_pass http://127.0.0.1:9292;}"]
+        }
+      }
+```
+
+### Тестирование роли
+#### Установка virtualenv и virtualenvwrapper 
+1. Установлен Pipenv
+**_Note_** Pipenv is a dependency manager
+```
+pip install --user pipenv
+```
+
+2. Установлен virtualenv
+**_Note_** virtualenv is a tool to create isolated Python environments. virtualenv creates a folder which contains all the necessary executables to use the packages that a Python project would need. 
+```
+pip install virtualenv
+virtualenv --version
+```
+
+3. Установлен virtualenvwrapper
+**_Note_** virtualenvwrapper provides a set of commands which makes working with virtual environments much more pleasant. It also places all your virtual environments in one place.
+```
+pip install virtualenvwrapper
+```
+
+4. Установлены зависимости в ansible/requirements.txt
+```
+ansible>=2.4
+molecule>=2.6
+testinfra>=1.10
+python-vagrant>=0.5.15
+```
+
+4.1 Установить molecule-vagrant, чтобы появился драйвер vagrant
+```
+pip3 install --user molecule-vagrant
+```
+проверка
+```
+molecule drivers
+```
+вывод
+```
+  delegated
+  vagrant
+```
+
+#### Тестирование db роли
+1. Создана заготовка тестов для роли db. 
+```
+molecule init scenario -r db -d vagrant default
+```
+2. Добавлены тесты с использованием модуля Testinfra ansible\roles\db\molecule\default\tests\test_default.py
+
+#### Создание тестовой машины
+1. Внесены изменения в описание тестовой машины, которая создается Molecule для тестов db/molecule/default/molecule.yml
+2. Создание VM для проверки роли. В директории ansible/roles/db выполнить команду molecule create
+2.1. Получена ошибка: 
+```
+{'lint': ['must be of string type']}
+```
+Внесены изменения в файл ansible\roles\db\molecule\default\molecule.yml 
+```
+lint:
+  name: yamllint
+заменен на
+lint: |
+  yamllint
+```
+```
+lint:
+    name: ansible-lint
+заменен на
+  lint: |
+    ansible-lint
+```
+2.2. Получена ошибка: 
+```
+ERROR    Computed fully qualified role name of db does not follow current galaxy requirements.
+```
+В файл ansible\roles\db\meta\main.yml добавлена строка 'namespace: vlyulin'
+
+2.3. Получена ошибка:
+```
+Command: ["startvm", "41933ad6-60fc-459a-b1be-d4be310c8965", "--type", "headless"]
+
+Stderr: VBoxManage.exe: error: RawFile#0 failed to create the raw output file /home/ubuntu/.cache/molecule/db/default/ubuntu-xenial-16.04-cloudimg-console.log (VERR_PATH_NOT_FOUND)^M
+VBoxManage.exe: error: Details: code E_FAIL (0x80004005), component ConsoleWrap, interface IConsole
+```
+Внесены изменения в файл ansible\roles\db\molecule\default\molecule.yml
+Добавлена строка "customize [ 'modifyvm', :id, '--uartmode1', 'disconnected' ]"
+```
+platforms:
+  - name: instance
+    box: ubuntu/xenial64
+    provider_raw_config_args:
+      - "customize [ 'modifyvm', :id, '--uartmode1', 'disconnected' ]"
+```
+2.4 molecule list
+```
+                ╷             ╷                  ╷               ╷         ╷
+  Instance Name │ Driver Name │ Provisioner Name │ Scenario Name │ Created │ Converged
+╶───────────────┼─────────────┼──────────────────┼───────────────┼─────────┼───────────╴
+  instance      │ vagrant     │ ansible          │ default       │ true    │ false
+                ╵             ╵                  ╵               ╵         ╵
+```
+
+3. Внесены изменения в файл \ansible\roles\db\molecule\default\converge.yml
+```
+---
+- name: Converge
+  become: true
+  hosts: all
+  vars:
+    mongo_bind_ip: 0.0.0.0
+  tasks:
+    - name: "Include db"
+      include_role:
+        name: "db"
+```
+4. Выполнена команда molecule converge
+```
+PLAY RECAP *********************************************************************
+instance                   : ok=8    changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+5. Проверка тестов molecule verify
+```
+TASK [Example assertion] *******************************************************
+ok: [instance] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+PLAY RECAP *********************************************************************
+instance                   : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+INFO     Verifier completed successfully.
+```
+
+#### Самостоятельная работа
+1. В файл \ansible\roles\db\molecule\default\tests\test_default.py добавлен тест проверки, что БД слушает по нужному порту (27017)
+```
+def test_listening_db_on_27017(host):
+    socket = host.socket("tcp://0.0.0.0:27017")
+    assert socket.is_listening
+```
+2. Для использования роли db и app в плейбуках packer_db.yml и packer_app.yml внесены соответствующие изменения в файлы ansible\playbooks\packer_db.yml и ansible\playbooks\packer_app.yml 
+Проверены изменения из корня vlyulin_infra:
+```
+packer validate -var-file=./packer/variables.json ./packer/app.json
+packer validate -var-file=./packer/variables.json ./packer/db.json
+```
+
+#### Задание со *
+1. Вынести роль db в отдельный репозиторий: удалить роль из 
+репозитория infra и сделать подключение роли через 
+requirements.yml обоих окружений;
+
+1.1 Создан отдельный репозиторий https://github.com/Otus-DevOps-2021-08/vlyulin_db.git
+1.2 В репозитории vlyulin_db создан шаблон роли db с помощью команды ansible-galaxy init db
+1.3 Добавлен вызов роли db из репозитория vlyulin_db в файлы ansible\environments\stage\requirements.yml и ansible\environments\prod\requirements.yml 
+```
+- name: db
+  src: https://github.com/Otus-DevOps-2021-08/vlyulin_db.git
+```
+1.4 3. Роль db скопирована из \ansible\roles\db в отдельный перозиторий https://github.com/Otus-DevOps-2021-08/vlyulin_db.git
