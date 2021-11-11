@@ -2175,15 +2175,191 @@ packer validate -var-file=./packer/variables.json ./packer/db.json
 ```
 
 #### Задание со *
-1. Вынести роль db в отдельный репозиторий: удалить роль из 
+##### 1. Вынести роль db в отдельный репозиторий: удалить роль из 
 репозитория infra и сделать подключение роли через 
 requirements.yml обоих окружений;
 
-1.1 Создан отдельный репозиторий https://github.com/Otus-DevOps-2021-08/vlyulin_db.git
+1.1 Создан отдельный репозиторий https://github.com/vlyulin/Otus-DevOps-2021-08_Db.git
 1.2 В репозитории vlyulin_db создан шаблон роли db с помощью команды ansible-galaxy init db
 1.3 Добавлен вызов роли db из репозитория vlyulin_db в файлы ansible\environments\stage\requirements.yml и ansible\environments\prod\requirements.yml 
 ```
 - name: db
-  src: https://github.com/Otus-DevOps-2021-08/vlyulin_db.git
+  src: https://github.com/vlyulin/Otus-DevOps-2021-08_Db.git
 ```
-1.4 3. Роль db скопирована из \ansible\roles\db в отдельный перозиторий https://github.com/Otus-DevOps-2021-08/vlyulin_db.git
+1.4 Роль db скопирована из \ansible\roles\db в отдельный перозиторий https://github.com/vlyulin/Otus-DevOps-2021-08_Db.git
+1.5 И отправлена в origin
+```
+git add .
+git commit -m "ansible-4 Db role"
+git push --set-upstream origin master
+```
+1.6 Удалена роль /ansible/roles/db.
+1.7 Установлена роль из репозитория https://github.com/vlyulin/Otus-DevOps-2021-08_Db.git
+```
+ansible-galaxy install -r environments/stage/requirements.yml
+```
+
+##### 2. Подключить TravisCI для созданного репозитория с ролью db для автоматического прогона тестов в GCE.
+
+**_Note_** Настройка Travis CI на основе https://gist.github.com/ArtMan-8/bfffd5e8c8454402804a147b72387bb4
+**_Note_** https://cloud.google.com/architecture/continuous-delivery-with-travis-ci
+
+2.1 Идём на travis-ci.com, и логинимся через github.
+2.2 Добавляем репозиторий https://github.com/vlyulin/Otus-DevOps-2021-08_Db.git
+![](imgs/add_new_repo.png)
+
+2.3 На travis-ci.com нужно будет добавить ключ для проекта. Для этого идём в github, 
+в настройки разработчика (Account Settings/Developer settings/Personal Access Tokens или https://github.com/settings/tokens), 
+и создаем ключ нажатием кнопки "Generate New Token".
+![](imgs/generate_token.png)
+
+2.4 При генерации отмечаем только одну опцию public_repo. Даём ему название и копируем полученый ключ.
+![](imgs/public_repo.png)
+
+2.5 Возвращаемся на travis-ci.com в проекты и идём в настройки, включаем галочки как отмечено и вводим ключ.
+![](imgs/travis_sequr_settings.png)
+
+2.6 Перейти в директорию Otus-DevOps-2021-08_Db\ и скопировать .travis.yml файл командой
+```
+wget https://raw.githubusercontent.com/vitkhab/gce_test/c98d97ea79bacad23fd26106b52dee0d21144944/.travis.yml
+```
+2.7 Установить molecule-gce, чтобы появился драйвер gce
+```
+sudo pip3 install --upgrade jinja2
+sudo apt install python3-testresources
+pip3 install --user molecule-gce
+```
+проверка
+```
+molecule drivers
+```
+вывод
+```
+  delegated
+  gce
+  vagrant
+```
+
+2.7 Создаем в новом репозитории https://github.com/vlyulin/Otus-DevOps-2021-08_Db.git 
+шаблон для молекулы используя driver gce molecule с помощью команды
+```
+molecule init scenario -d gce default
+```
+вывод:
+```
+INFO     Initializing new scenario default...
+INFO     Initialized scenario in /mnt/c/_P/OTUSDevOps/Otus-DevOps-2021-08/Otus-DevOps-2021-08_Db/molecule/default successfully.
+```
+
+2.8 Прописываем параметры платформы в файле Otus-DevOps-2021-08_Db\molecule\default\molecule.yml
+```
+platforms:
+  - name: instance-travis
+    zone: europe-west1-b
+    machine_type: f1-micro
+    image: ubuntu-1604-xenial-v20170919
+```
+
+2.9 Создать Service Account для GCE (https://console.cloud.google.com/)
+2.10 Создать новый проект (https://console.cloud.google.com/projectcreate) 
+![](imgs/GCP_project_creation.png)
+2.11 Перейти IAM & Admin -> Service Accounts -> Create service account для создания нового travis service account.
+![](imgs/service_account_creation.png)
+2.12 Создал новую пару ключей. Приватный ключ сохранил в формате json на локальной машине. Сохранение предлагается при генерации ключей. 
+![](imgs/GCP_manage_keys.png)
+2.13 Для созданного проекта сделать активным "Compute Engine API". Необходимость выяснилась позже.
+```
+https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=486100609184
+```
+![](imgs/enable_compute_engine_api.png)
+
+2.13 Установка travis
+**_Note_** https://github.com/travis-ci/travis.rb#installation
+
+```
+sudo apt-get install ruby-full
+ruby -v
+sudo gem install travis --no-document
+travis version
+```
+
+Для предотвращения ошибок подобной этой 
+```
+repository not known to https://api.travis-ci.org/: vlyulin/Otus-DevOps-2021-08_Db
+```
+при выполнении команды
+```
+travis encrypt GCE_PROJECT_ID='travis-331611' --add
+```
+надо внести изменения в файл ~/.travis/config.yml
+Меняем 
+```
+---
+checked_completion: true
+completion_version: 1.10.0
+last_check:
+  etag: '"3be303f8bf66846046ee453eaa958339"'
+  version: 1.10.0
+  at: 1636472585
+endpoints:
+  https://api.travis-ci.org/:
+    access_token:
+```
+на 
+```
+endpoints:
+  https://api.travis-ci.com/:
+```
+
+2.14 Перед выполнением команд travis encrypt требуется выполнить 
+```
+travis login --pro --github-token xxx
+```
+где xxx сренерированный token на github c правами repo
+![](imgs/github_token.png)
+
+2.15 Шифруем параметры, значения которых взяты из файла credentials.json 
+```
+travis encrypt GCE_SERVICE_ACCOUNT_EMAIL='travis@travis-331611.iam.gserviceaccount.com' --add
+travis encrypt GCE_CREDENTIALS_FILE="$(pwd)/credentials.json" --add
+travis encrypt GCE_PROJECT_ID='travis-331611' --add
+```
+
+**_Note_** Команды добавляют зашифрованные значения в файл .travis.yml 
+```
+- secure: r1+kbet...
+```
+
+2.16 Шифруем файл travis-331611-19a59f7f8eef.json предварительно переименовав в credentials.json
+```
+tar cvf secrets.tar credentials.json google_compute_engine
+```
+где google_compute_engine - приватный ключ для GCE (Google compute E?)
+```
+travis login
+travis encrypt-file secrets.tar --add
+```
+
+Последняя команда добавит подобный текст в файл:
+```
+before_install:
+- openssl aes-256-cbc -K $encrypted_3b9f0b9d36d1_key -iv $encrypted_3b9f0b9d36d1_iv
+  -in secrets.tar.enc -out secrets.tar -d
+```
+
+2.17 Отправить все в репозитарий https://github.com/vlyulin/Otus-DevOps-2021-08_Db.git
+В директории Otus-DevOps-2021-08_Db выполнить команды:
+```
+git add .
+git commit -m "Added Travis integration"
+git push
+```
+
+2.18 Проверить результат работы:
+Пытается собрать и выполнить тесты, но ломается на доступе в GCE
+![](imgs/travis_building.png)
+![](imgs/permission_denied.png)
+
+Победить "Permission denied" к сожалению не получилось.
+
+
