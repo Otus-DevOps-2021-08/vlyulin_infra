@@ -1,0 +1,7 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: "Include Otus-DevOps-2021-08_Db"
+      ansible.builtin.include_role:
+        name: "Otus-DevOps-2021-08_Db"

@@ -1,0 +1,13 @@
+.googlecloud
+secrets.tar 
+creadentials.json
+google_compute_engine 
+# google_compute_engine.pub 
+*.log
+*.tar
+*.pub
+.vagrant
+*.pyc
+.molecule
+.cache
+.pytest_cache
