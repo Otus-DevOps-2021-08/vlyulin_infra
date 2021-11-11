@@ -2334,7 +2334,7 @@ travis encrypt GCE_PROJECT_ID='travis-331611' --add
 ```
 tar cvf secrets.tar credentials.json google_compute_engine
 ```
-где google_compute_engine - приватный ключ для GCE (Google compute E?)
+где google_compute_engine - приватный ключ для GCP (Google Cloud Platform)
 ```
 travis login
 travis encrypt-file secrets.tar --add
