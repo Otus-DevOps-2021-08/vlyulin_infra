@@ -17,7 +17,7 @@ Pull request: ![event parameter](https://github.com/Otus-DevOps-2021-08/vlyulin_
 * [Module hw08-ansible-1](#Module-hw08-ansible-1)
 * [Module hw09-ansible-2](#Module-hw09-ansible-2)
 * [Module hw10-ansible-3](#Module-hw10-ansible-3)
-* [Module hw11-ansible-4](#Module-hw10-ansible-4)
+* [Module hw11-ansible-4](#Module-hw11-ansible-4)
 
 
 # Student
