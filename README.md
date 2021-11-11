@@ -1945,7 +1945,7 @@ The following NEW packages will be installed:
 changed: [dbserver]
 ```
 
-16. Проверена даступность dbserver из сервера appserver
+16. Проверена доступность dbserver из сервера appserver
 ```
 vagrant ssh appserver
 vagrant@ubuntu-xenial:~$ telnet 10.10.10.10 27017
@@ -2240,7 +2240,7 @@ molecule drivers
   vagrant
 ```
 
-2.7 Создаем в новом репозитории https://github.com/vlyulin/Otus-DevOps-2021-08_Db.git 
+2.8 Создаем в новом репозитории https://github.com/vlyulin/Otus-DevOps-2021-08_Db.git 
 шаблон для молекулы используя driver gce molecule с помощью команды
 ```
 molecule init scenario -d gce default
@@ -2251,7 +2251,7 @@ INFO     Initializing new scenario default...
 INFO     Initialized scenario in /mnt/c/_P/OTUSDevOps/Otus-DevOps-2021-08/Otus-DevOps-2021-08_Db/molecule/default successfully.
 ```
 
-2.8 Прописываем параметры платформы в файле Otus-DevOps-2021-08_Db\molecule\default\molecule.yml
+2.9 Прописываем параметры платформы в файле Otus-DevOps-2021-08_Db\molecule\default\molecule.yml
 ```
 platforms:
   - name: instance-travis
@@ -2260,20 +2260,20 @@ platforms:
     image: ubuntu-1604-xenial-v20170919
 ```
 
-2.9 Создать Service Account для GCE (https://console.cloud.google.com/)
-2.10 Создать новый проект (https://console.cloud.google.com/projectcreate) 
+2.10 Создать Service Account для GCE (https://console.cloud.google.com/)
+2.11 Создать новый проект (https://console.cloud.google.com/projectcreate) 
 ![](imgs/GCP_project_creation.png)
-2.11 Перейти IAM & Admin -> Service Accounts -> Create service account для создания нового travis service account.
+2.12 Перейти IAM & Admin -> Service Accounts -> Create service account для создания нового travis service account.
 ![](imgs/service_account_creation.png)
-2.12 Создал новую пару ключей. Приватный ключ сохранил в формате json на локальной машине. Сохранение предлагается при генерации ключей. 
+2.13 Создал новую пару ключей. Приватный ключ сохранил в формате json на локальной машине. Сохранение предлагается при генерации ключей. 
 ![](imgs/GCP_manage_keys.png)
-2.13 Для созданного проекта сделать активным "Compute Engine API". Необходимость выяснилась позже.
+2.14 Для созданного проекта сделать активным "Compute Engine API". Необходимость выяснилась позже.
 ```
 https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=486100609184
 ```
 ![](imgs/enable_compute_engine_api.png)
 
-2.13 Установка travis
+2.15 Установка travis
 **_Note_** https://github.com/travis-ci/travis.rb#installation
 
 ```
@@ -2311,14 +2311,14 @@ endpoints:
   https://api.travis-ci.com/:
 ```
 
-2.14 Перед выполнением команд travis encrypt требуется выполнить 
+2.16 Перед выполнением команд travis encrypt требуется выполнить 
 ```
 travis login --pro --github-token xxx
 ```
 где xxx сренерированный token на github c правами repo
 ![](imgs/github_token.png)
 
-2.15 Шифруем параметры, значения которых взяты из файла credentials.json 
+2.17 Шифруем параметры, значения которых взяты из файла credentials.json 
 ```
 travis encrypt GCE_SERVICE_ACCOUNT_EMAIL='travis@travis-331611.iam.gserviceaccount.com' --add
 travis encrypt GCE_CREDENTIALS_FILE="$(pwd)/credentials.json" --add
@@ -2330,7 +2330,7 @@ travis encrypt GCE_PROJECT_ID='travis-331611' --add
 - secure: r1+kbet...
 ```
 
-2.16 Шифруем файл travis-331611-19a59f7f8eef.json предварительно переименовав в credentials.json
+2.18 Шифруем файл travis-331611-19a59f7f8eef.json предварительно переименовав в credentials.json
 ```
 tar cvf secrets.tar credentials.json google_compute_engine
 ```
@@ -2347,7 +2347,7 @@ before_install:
   -in secrets.tar.enc -out secrets.tar -d
 ```
 
-2.17 Отправить все в репозитарий https://github.com/vlyulin/Otus-DevOps-2021-08_Db.git
+2.19 Отправить все в репозитарий https://github.com/vlyulin/Otus-DevOps-2021-08_Db.git
 В директории Otus-DevOps-2021-08_Db выполнить команды:
 ```
 git add .
@@ -2355,7 +2355,7 @@ git commit -m "Added Travis integration"
 git push
 ```
 
-2.18 Проверить результат работы:
+2.20 Проверить результат работы:
 Пытается собрать и выполнить тесты, но ломается на доступе в GCE
 ![](imgs/travis_building.png)
 ![](imgs/permission_denied.png)
